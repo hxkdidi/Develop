@@ -74,7 +74,6 @@ public class KenOsManager {
         // 默认的app会在以包名为默认的process name下运行，如果查到的process name不是app的process
         // name就立即返回
         if (processAppName == null || !processAppName.equalsIgnoreCase(mContext.getPackageName())) {
-
             // 则此application::onCreate 是被service 调用的，直接返回
             return false;
         }
@@ -104,7 +103,6 @@ public class KenOsManager {
             ActivityManager.RunningAppProcessInfo info = (ActivityManager.RunningAppProcessInfo) (i.next());
             try {
                 if (info.pid == pID) {
-
                     processName = info.processName;
                     return processName;
                 }
