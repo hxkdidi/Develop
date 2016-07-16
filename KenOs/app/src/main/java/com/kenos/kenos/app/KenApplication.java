@@ -1,11 +1,18 @@
 package com.kenos.kenos.app;
 
-import android.app.Application;
 import android.content.Context;
 import android.support.multidex.MultiDex;
+import android.support.multidex.MultiDexApplication;
+import android.text.TextUtils;
 
-import com.hyphenate.chat.EMClient;
-import com.hyphenate.chat.EMOptions;
+import com.kenos.kenos.Constant;
+import com.kenos.kenos.chat.KenOsManager;
+import com.kenos.kenos.db.EaseUser;
+import com.kenos.kenos.db.UserInfo;
+import com.kenos.kenos.db.UserDao;
+
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * User: hxk(huangxikang@520dyw.cn)
@@ -13,27 +20,28 @@ import com.hyphenate.chat.EMOptions;
  * Time: 15:26
  * Description:
  */
-public class KenApplication extends Application {
-    public static Context context;
+public class KenApplication extends MultiDexApplication {
+    public static Context mContext;
     private static KenApplication instance;
-    // login user name
-    public final String PREF_USERNAME = "username";
+    private String username = "";
+    private Map<String, EaseUser> contactList;
+    private UserDao userDao;
 
-    /**
-     * nickname for current user, the nickname instead of ID be shown when user receive notification from APNs
-     */
-    public static String currentUserNick = "";
 
     @Override
     public void onCreate() {
         MultiDex.install(this);
         super.onCreate();
-        context = this;
+        mContext = this;
         instance = this;
-        EMOptions options = null;
-        // 默认添加好友时，是不需要验证的，改成需要验证
-        options.setAcceptInvitationAlways(false);
-        KenOsManager.getInstance().onInit(context, options);
+        // 初始化数据库
+        if (KenOsManager.getInstance().init(mContext)) {
+            initDbDao(mContext);
+        }
+    }
+
+    private void initDbDao(Context context) {
+        userDao = new UserDao(context);
     }
 
     public static KenApplication getInstance() {
@@ -44,5 +52,32 @@ public class KenApplication extends Application {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         MultiDex.install(this);
+    }
+
+    public void setCurrentUserName(String username) {
+        this.username = username;
+        UserInfo.getInstance(instance).setUserInfo(Constant.KEY_USERNAME, username);
+    }
+
+    public String getCurrentUserName() {
+        if (TextUtils.isEmpty(username)) {
+            username = UserInfo.getInstance(instance).getUserInfo(Constant.KEY_USERNAME);
+
+        }
+        return username;
+    }
+
+    public void setContactList(Map<String, EaseUser> contactList) {
+        this.contactList = contactList;
+        userDao.saveContactList(new ArrayList<EaseUser>(contactList.values()));
+
+    }
+
+    public Map<String, EaseUser> getContactList() {
+        if (contactList == null) {
+            contactList = userDao.getContactList();
+        }
+        return contactList;
+
     }
 }

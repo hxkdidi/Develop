@@ -1,32 +1,41 @@
+/**
+ * Copyright (C) 2016 Hyphenate Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.kenos.kenos.db;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 
-import com.kenos.kenos.domain.InviteMessage;
-
-import java.util.ArrayList;
 import java.util.List;
 
 
 public class InviteMessgeDao {
-	public static final String TABLE_NAME = "new_friends_msgs";
-	public static final String COLUMN_NAME_ID = "id";
-	public static final String COLUMN_NAME_FROM = "username";
-	public static final String COLUMN_NAME_GROUP_ID = "groupid";
-	public static final String COLUMN_NAME_GROUP_Name = "groupname";
+	static final String TABLE_NAME = "new_friends_msgs";
+	static final String COLUMN_NAME_ID = "id";
+	static final String COLUMN_NAME_FROM = "username";
+	static final String COLUMN_NAME_GROUP_ID = "groupid";
+	static final String COLUMN_NAME_GROUP_Name = "groupname";
 	
-	public static final String COLUMN_NAME_TIME = "time";
-	public static final String COLUMN_NAME_REASON = "reason";
+	static final String COLUMN_NAME_TIME = "time";
+	static final String COLUMN_NAME_REASON = "reason";
 	public static final String COLUMN_NAME_STATUS = "status";
-	public static final String COLUMN_NAME_ISINVITEFROMME = "isInviteFromMe";
+	static final String COLUMN_NAME_ISINVITEFROMME = "isInviteFromMe";
+	static final String COLUMN_NAME_GROUPINVITER = "groupinviter";
 	
-	private DbOpenHelper dbHelper;
+	static final String COLUMN_NAME_UNREAD_MSG_COUNT = "unreadMsgCount";
 	
+		
 	public InviteMessgeDao(Context context){
-		dbHelper = DbOpenHelper.getInstance(context);
 	}
 	
 	/**
@@ -34,27 +43,8 @@ public class InviteMessgeDao {
 	 * @param message
 	 * @return  返回这条messaged在db中的id
 	 */
-	public synchronized Integer saveMessage(InviteMessage message){
-		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		int id = -1;
-		if(db.isOpen()){
-			ContentValues values = new ContentValues();
-			values.put(COLUMN_NAME_FROM, message.getFrom());
-			values.put(COLUMN_NAME_GROUP_ID, message.getGroupId());
-			values.put(COLUMN_NAME_GROUP_Name, message.getGroupName());
-			values.put(COLUMN_NAME_REASON, message.getReason());
-			values.put(COLUMN_NAME_TIME, message.getTime());
-			values.put(COLUMN_NAME_STATUS, message.getStatus().ordinal());
-			db.insert(TABLE_NAME, null, values);
-			
-			Cursor cursor = db.rawQuery("select last_insert_rowid() from " + TABLE_NAME,null); 
-            if(cursor.moveToFirst()){
-                id = cursor.getInt(0);
-            }
-            
-            cursor.close();
-		}
-		return id;
+	public Integer saveMessage(InviteMessage message){
+		return KenDBManager.getInstance().saveMessage(message);
 	}
 	
 	/**
@@ -63,10 +53,7 @@ public class InviteMessgeDao {
 	 * @param values
 	 */
 	public void updateMessage(int msgId,ContentValues values){
-		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		if(db.isOpen()){
-			db.update(TABLE_NAME, values, COLUMN_NAME_ID + " = ?", new String[]{String.valueOf(msgId)});
-		}
+	    KenDBManager.getInstance().updateMessage(msgId, values);
 	}
 	
 	/**
@@ -74,59 +61,18 @@ public class InviteMessgeDao {
 	 * @return
 	 */
 	public List<InviteMessage> getMessagesList(){
-		SQLiteDatabase db = dbHelper.getReadableDatabase();
-		List<InviteMessage> msgs = new ArrayList<InviteMessage>();
-		if(db.isOpen()){
-			Cursor cursor = db.rawQuery("select * from " + TABLE_NAME + " desc",null);
-			while(cursor.moveToNext()){
-				InviteMessage msg = new InviteMessage();
-				int id = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID));
-				String from = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_FROM));
-				String groupid = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_ID));
-				String groupname = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_GROUP_Name));
-				String reason = cursor.getString(cursor.getColumnIndex(COLUMN_NAME_REASON));
-				long time = cursor.getLong(cursor.getColumnIndex(COLUMN_NAME_TIME));
-				int status = cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_STATUS));
-				
-				msg.setId(id);
-				msg.setFrom(from);
-				msg.setGroupId(groupid);
-				msg.setGroupName(groupname);
-				msg.setReason(reason);
-				msg.setTime(time);
-				if(status == InviteMessage.InviteMesageStatus.BEINVITEED.ordinal())
-					msg.setStatus(InviteMessage.InviteMesageStatus.BEINVITEED);
-				else if(status == InviteMessage.InviteMesageStatus.BEAGREED.ordinal())
-					msg.setStatus(InviteMessage.InviteMesageStatus.BEAGREED);
-				else if(status == InviteMessage.InviteMesageStatus.BEREFUSED.ordinal())
-					msg.setStatus(InviteMessage.InviteMesageStatus.BEREFUSED);
-				else if(status == InviteMessage.InviteMesageStatus.AGREED.ordinal())
-					msg.setStatus(InviteMessage.InviteMesageStatus.AGREED);
-				else if(status == InviteMessage.InviteMesageStatus.REFUSED.ordinal())
-					msg.setStatus(InviteMessage.InviteMesageStatus.REFUSED);
-				else if(status == InviteMessage.InviteMesageStatus.BEAPPLYED.ordinal()){
-					msg.setStatus(InviteMessage.InviteMesageStatus.BEAPPLYED);
-				}
-				msgs.add(msg);
-			}
-			cursor.close();
-		}
-		return msgs;
+		return KenDBManager.getInstance().getMessagesList();
 	}
 	
 	public void deleteMessage(String from){
-		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		if(db.isOpen()){
-			db.delete(TABLE_NAME, COLUMN_NAME_FROM + " = ?", new String[]{from});
-		}
+	    KenDBManager.getInstance().deleteMessage(from);
 	}
-	public void deleteALLMessage(){
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        if(db.isOpen()){
-        db.execSQL("DELETE FROM "+TABLE_NAME);
-        }
-        if(db!=null){
-            db.close();
-        }
-    }
+	
+	public int getUnreadMessagesCount(){
+	    return KenDBManager.getInstance().getUnreadNotifyCount();
+	}
+	
+	public void saveUnreadMessageCount(int count){
+	    KenDBManager.getInstance().setUnreadNotifyCount(count);
+	}
 }
