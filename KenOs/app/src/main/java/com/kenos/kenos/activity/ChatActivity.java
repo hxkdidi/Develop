@@ -1,7 +1,6 @@
 package com.kenos.kenos.activity;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -23,12 +22,13 @@ import com.hyphenate.chat.EMMessage.ChatType;
 import com.hyphenate.chat.EMTextMessageBody;
 import com.kenos.kenos.Constant;
 import com.kenos.kenos.R;
+import com.kenos.kenos.base.BaseActivity;
 import com.kenos.kenos.utils.EaseCommonUtils;
 
 
 import java.util.List;
 
-public class ChatActivity extends Activity {
+public class ChatActivity extends BaseActivity {
     private ListView listView;
     private int chatType = 1;
     private String toChatUsername;
@@ -92,7 +92,6 @@ public class ChatActivity extends Activity {
     }
 
     private void setMesaage(String content) {
-
         // 创建一条文本消息，content为消息文字内容，toChatUsername为对方用户或者群聊的id，后文皆是如此
         EMMessage message = EMMessage.createTxtSendMessage(content, toChatUsername);
         // 如果是群聊，设置chattype，默认是单聊

@@ -1,4 +1,4 @@
-package com.kenos.kenos.activity.adapter;
+package com.kenos.kenos.adapter;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -16,7 +16,7 @@ import android.widget.Toast;
 import com.hyphenate.chat.EMClient;
 import com.kenos.kenos.R;
 import com.kenos.kenos.db.InviteMessage;
-import com.kenos.kenos.db.InviteMessgeDao;
+import com.kenos.kenos.db.InviteMessageDao;
 
 
 import java.util.List;
@@ -28,12 +28,12 @@ import java.util.List;
 public class NewFriendsMsgAdapter extends ArrayAdapter<InviteMessage> {
 
 	private Context context;
-	private InviteMessgeDao messgeDao;
+	private InviteMessageDao messgeDao;
 
 	public NewFriendsMsgAdapter(Context context, int textViewResourceId, List<InviteMessage> objects) {
 		super(context, textViewResourceId, objects);
 		this.context = context;
-		messgeDao = new InviteMessgeDao(context);
+		messgeDao = new InviteMessageDao(context);
 	}
 
 	@Override
@@ -59,11 +59,7 @@ public class NewFriendsMsgAdapter extends ArrayAdapter<InviteMessage> {
 		
 		final InviteMessage msg = getItem(position);
 		if (msg != null) {
-		    
 		    holder.btn_agree.setVisibility(View.INVISIBLE);
-		    
-		 
-			
 			holder.tv_reason.setText(msg.getReason());
 			holder.tv_name.setText(msg.getFrom());
   			if (msg.getStatus() == InviteMessage.InviteMesageStatus.BEAGREED) {
@@ -131,7 +127,7 @@ public class NewFriendsMsgAdapter extends ArrayAdapter<InviteMessage> {
                     msg.setStatus(InviteMessage.InviteMesageStatus.AGREED);
                     // 更新db
                     ContentValues values = new ContentValues();
-                    values.put(InviteMessgeDao.COLUMN_NAME_STATUS, msg.getStatus().ordinal());
+                    values.put(InviteMessageDao.COLUMN_NAME_STATUS, msg.getStatus().ordinal());
                     messgeDao.updateMessage(msg.getId(), values);
 					((Activity) context).runOnUiThread(new Runnable() {
 

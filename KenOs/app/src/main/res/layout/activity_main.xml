@@ -1,62 +1,21 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:orientation="vertical">
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:orientation="vertical">
+     <!-- 标题 -->
+    <include  android:id="@+id/layout_bar" layout="@layout/layout_title"/>
+     <!-- 内容模块 -->
+	<FrameLayout
+		android:id="@+id/fragment_container"
+		android:layout_width="fill_parent"
+		android:layout_height="0dip"
+		android:layout_weight="1" >
 
-    <RelativeLayout
-        android:id="@+id/title"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/height_top_bar"
-        android:layout_marginBottom="40dp"
-        android:background="@color/top_bar_normal_bg"
-        android:gravity="center_vertical">
+	</FrameLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:text="主页"
-            android:textColor="#fff"
-            android:textSize="18sp"/>
-    </RelativeLayout>
-
-    <Button
-        android:id="@+id/btn_conversation"
-        android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:layout_margin="20dp"
-        android:padding="10dp"
-        android:text="会话列表"
-        android:textSize="18sp"/>
-
-    <Button
-        android:id="@+id/btn_contact"
-        android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:layout_margin="20dp"
-        android:layout_marginTop="20dp"
-        android:padding="10dp"
-        android:text="通讯录"
-        android:textSize="18sp"/>
-
-    <Button
-        android:id="@+id/btn_newfriend"
-        android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:layout_margin="20dp"
-        android:layout_marginTop="20dp"
-        android:padding="10dp"
-        android:text="好友申请"
-        android:textSize="18sp"/>
-
-    <Button
-        android:id="@+id/btn_logout"
-        android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:layout_margin="20dp"
-        android:layout_marginTop="20dp"
-        android:padding="10dp"
-        android:text="退出"
-        android:textSize="18sp"/>
+	<!-- 底部导航菜单 -->
+	  <include layout="@layout/layout_bottom"/>
 
 </LinearLayout>

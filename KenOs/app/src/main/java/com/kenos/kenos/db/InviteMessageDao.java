@@ -19,7 +19,7 @@ import android.content.Context;
 import java.util.List;
 
 
-public class InviteMessgeDao {
+public class InviteMessageDao {
 	static final String TABLE_NAME = "new_friends_msgs";
 	static final String COLUMN_NAME_ID = "id";
 	static final String COLUMN_NAME_FROM = "username";
@@ -35,7 +35,7 @@ public class InviteMessgeDao {
 	static final String COLUMN_NAME_UNREAD_MSG_COUNT = "unreadMsgCount";
 	
 		
-	public InviteMessgeDao(Context context){
+	public InviteMessageDao(Context context){
 	}
 	
 	/**

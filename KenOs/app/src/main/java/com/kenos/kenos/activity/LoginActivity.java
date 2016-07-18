@@ -19,6 +19,7 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.exceptions.HyphenateException;
 import com.kenos.kenos.R;
 import com.kenos.kenos.app.KenApplication;
+import com.kenos.kenos.base.BaseActivity;
 import com.kenos.kenos.db.KenDBManager;
 import com.kenos.kenos.db.EaseUser;
 import com.kenos.kenos.utils.EaseCommonUtils;
@@ -31,7 +32,7 @@ import java.util.Map;
 /**
  * 登陆页面
  */
-public class LoginActivity extends Activity {
+public class LoginActivity extends BaseActivity {
     private static final String TAG = "LoginActivity";
     public static final int REQUEST_CODE_SETNICK = 1;
     private EditText usernameEditText;
@@ -51,14 +52,11 @@ public class LoginActivity extends Activity {
         if (EMClient.getInstance().isLoggedInBefore()) {
             autoLogin = true;
             startActivity(new Intent(LoginActivity.this, MainActivity.class));
-
             return;
         }
         setContentView(R.layout.activity_login);
-
         usernameEditText = (EditText) findViewById(R.id.username);
         passwordEditText = (EditText) findViewById(R.id.password);
-
         // 如果用户名改变，清空密码
         usernameEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -135,10 +133,8 @@ public class LoginActivity extends Activity {
                 getFriends();
 
                 // 进入主页面
-                Intent intent = new Intent(LoginActivity.this,
-                        MainActivity.class);
+                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(intent);
-
                 finish();
             }
 
@@ -171,16 +167,11 @@ public class LoginActivity extends Activity {
             for (String username : usernames) {
                 EaseUser user = new EaseUser(username);
                 users.put(username, user);
-
-
             }
-
             KenApplication.getInstance().setContactList(users);
-
         } catch (HyphenateException e) {
             e.printStackTrace();
         }
-
     }
 
 

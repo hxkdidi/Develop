@@ -32,17 +32,17 @@ public class DbOpenHelper extends SQLiteOpenHelper {
             + UserDao.COLUMN_NAME_ID + " TEXT PRIMARY KEY);";
 
     private static final String INIVTE_MESSAGE_TABLE_CREATE = "CREATE TABLE "
-            + InviteMessgeDao.TABLE_NAME + " ("
-            + InviteMessgeDao.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + InviteMessgeDao.COLUMN_NAME_FROM + " TEXT, "
-            + InviteMessgeDao.COLUMN_NAME_GROUP_ID + " TEXT, "
-            + InviteMessgeDao.COLUMN_NAME_GROUP_Name + " TEXT, "
-            + InviteMessgeDao.COLUMN_NAME_REASON + " TEXT, "
-            + InviteMessgeDao.COLUMN_NAME_STATUS + " INTEGER, "
-            + InviteMessgeDao.COLUMN_NAME_ISINVITEFROMME + " INTEGER, "
-            + InviteMessgeDao.COLUMN_NAME_UNREAD_MSG_COUNT + " INTEGER, "
-            + InviteMessgeDao.COLUMN_NAME_TIME + " TEXT, "
-            + InviteMessgeDao.COLUMN_NAME_GROUPINVITER + " TEXT); ";
+            + InviteMessageDao.TABLE_NAME + " ("
+            + InviteMessageDao.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+            + InviteMessageDao.COLUMN_NAME_FROM + " TEXT, "
+            + InviteMessageDao.COLUMN_NAME_GROUP_ID + " TEXT, "
+            + InviteMessageDao.COLUMN_NAME_GROUP_Name + " TEXT, "
+            + InviteMessageDao.COLUMN_NAME_REASON + " TEXT, "
+            + InviteMessageDao.COLUMN_NAME_STATUS + " INTEGER, "
+            + InviteMessageDao.COLUMN_NAME_ISINVITEFROMME + " INTEGER, "
+            + InviteMessageDao.COLUMN_NAME_UNREAD_MSG_COUNT + " INTEGER, "
+            + InviteMessageDao.COLUMN_NAME_TIME + " TEXT, "
+            + InviteMessageDao.COLUMN_NAME_GROUPINVITER + " TEXT); ";
 
     private static final String ROBOT_TABLE_CREATE = "CREATE TABLE "
             + UserDao.ROBOT_TABLE_NAME + " ("
@@ -93,12 +93,12 @@ public class DbOpenHelper extends SQLiteOpenHelper {
             db.execSQL(ROBOT_TABLE_CREATE);
         }
         if (oldVersion < 5) {
-            db.execSQL("ALTER TABLE " + InviteMessgeDao.TABLE_NAME + " ADD COLUMN " +
-                    InviteMessgeDao.COLUMN_NAME_UNREAD_MSG_COUNT + " INTEGER ;");
+            db.execSQL("ALTER TABLE " + InviteMessageDao.TABLE_NAME + " ADD COLUMN " +
+                    InviteMessageDao.COLUMN_NAME_UNREAD_MSG_COUNT + " INTEGER ;");
         }
         if (oldVersion < 6) {
-            db.execSQL("ALTER TABLE " + InviteMessgeDao.TABLE_NAME + " ADD COLUMN " +
-                    InviteMessgeDao.COLUMN_NAME_GROUPINVITER + " TEXT;");
+            db.execSQL("ALTER TABLE " + InviteMessageDao.TABLE_NAME + " ADD COLUMN " +
+                    InviteMessageDao.COLUMN_NAME_GROUPINVITER + " TEXT;");
         }
     }
 

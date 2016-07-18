@@ -26,12 +26,13 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.exceptions.HyphenateException;
 import com.kenos.kenos.R;
 import com.kenos.kenos.app.KenApplication;
+import com.kenos.kenos.base.BaseActivity;
 
 /**
  * 注册页
  * 
  */
-public class RegisterActivity extends  Activity {
+public class RegisterActivity extends BaseActivity {
 	private EditText userNameEditText;
 	private EditText passwordEditText;
 	private EditText confirmPwdEditText;
