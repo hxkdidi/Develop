@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,11 +17,14 @@ import android.widget.Toast;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.chat.EMTextMessageBody;
 import com.hyphenate.util.DateUtils;
+import com.kenos.kenos.Constant;
 import com.kenos.kenos.R;
 import com.kenos.kenos.activity.ChatActivity;
 import com.kenos.kenos.app.KenApplication;
 import com.kenos.kenos.base.BaseFragment;
+import com.kenos.kenos.utils.SmileUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -205,7 +207,7 @@ public class Fragment_Message extends BaseFragment {
             if (conversation.getAllMsgCount() != 0) {
                 // 把最后一条消息的内容作为item的message内容
                 EMMessage lastMessage = conversation.getLastMessage();
-                holder.message.setText(lastMessage.getBody().toString());
+                holder.message.setText(SmileUtils.getSmiledText(ctx, getMessageDigest(lastMessage, ctx)), TextView.BufferType.SPANNABLE);
                 holder.time.setText(DateUtils.getTimestampString(new Date(lastMessage.getMsgTime())));
                 if (lastMessage.direct() == EMMessage.Direct.SEND && lastMessage.status() == EMMessage.Status.FAIL) {
                     holder.msgState.setVisibility(View.VISIBLE);
@@ -251,6 +253,59 @@ public class Fragment_Message extends BaseFragment {
             this.timeSize = timeSize;
         }
 
+    }
+
+    /**
+     * 根据消息内容和消息类型获取消息内容提示
+     *
+     * @param message
+     * @param context
+     * @return
+     */
+    private String getMessageDigest(EMMessage message, Context context) {
+        String digest = "";
+        switch (message.getType()) {
+            case LOCATION: // 位置消息
+                if (message.direct() == EMMessage.Direct.RECEIVE) {
+                    digest = getString(context, R.string.location_recv);
+                    digest = String.format(digest, message.getFrom());
+                    return digest;
+                } else {
+                    // digest = EasyUtils.getAppResourceString(context,
+                    // "location_prefix");
+                    digest = getString(context, R.string.location_prefix);
+                }
+                break;
+            case IMAGE: // 图片消息
+                digest = getString(context, R.string.picture);
+                break;
+            case VOICE:// 语音消息
+                digest = getString(context, R.string.voice);
+                break;
+            case VIDEO: // 视频消息
+                digest = getString(context, R.string.video);
+                break;
+            case TXT: // 文本消息
+                if (!message.getBooleanAttribute(Constant.MESSAGE_ATTR_IS_VOICE_CALL, false)) {
+                    EMTextMessageBody txtBody = (EMTextMessageBody) message.getBody();
+                    digest = txtBody.getMessage();
+                } else {
+                    EMTextMessageBody txtBody = (EMTextMessageBody) message.getBody();
+                    digest = getString(context, R.string.voice_call) + txtBody.getMessage();
+                }
+                break;
+            case FILE: // 普通文件消息
+                digest = getString(context, R.string.file);
+                break;
+            default:
+                System.err.println("error, unknow type");
+                return "";
+        }
+        return digest;
+    }
+
+    String getString(Context context, int resId) {
+        return context.getResources().getString(resId);
     }
 
     private static class ViewHolder {
