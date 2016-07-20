@@ -3,44 +3,52 @@ package com.kenos.kenos.activity;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.PowerManager;
 import android.support.v4.view.ViewPager;
 import android.text.Editable;
-import android.text.Spannable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.hyphenate.EMError;
 import com.hyphenate.EMMessageListener;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMMessage.ChatType;
-import com.hyphenate.chat.EMTextMessageBody;
+import com.hyphenate.chat.EMVoiceMessageBody;
+import com.hyphenate.util.VoiceRecorder;
 import com.kenos.kenos.Constant;
 import com.kenos.kenos.R;
 import com.kenos.kenos.adapter.ExpressionAdapter;
 import com.kenos.kenos.adapter.ExpressionPagerAdapter;
+import com.kenos.kenos.adapter.KenMessageAdapter;
 import com.kenos.kenos.base.BaseActivity;
+import com.kenos.kenos.listener.VoicePlayClickListener;
+import com.kenos.kenos.preference.LocalUserInfo;
+import com.kenos.kenos.utils.CommonUtils;
 import com.kenos.kenos.utils.EaseCommonUtils;
 import com.kenos.kenos.utils.SmileUtils;
 import com.kenos.kenos.view.ExpandGridView;
 import com.kenos.kenos.view.PasteEditText;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,13 +57,16 @@ public class ChatActivity extends BaseActivity {
     private ListView listView;
     private int chatType = 1;
     private String toChatUsername;
+    private String toUserNick;
+    private String toUserAvatar;
+    private String myUserNick;
+    private String myUserAvatar;
     private Button btn_send;
     private List<EMMessage> msgList;
-    MessageAdapter adapter;
+    KenMessageAdapter adapter;
     private EMConversation conversation;
     protected int pageSize = 20;
     public static final String COPY_IMAGE = "EASEMOBIMG";
-    public static final int REQUEST_CODE_COPY_AND_PASTE = 11;
     public static int resendPos;
     private ImageView iv_back;
     private ViewPager expressionViewpager;
@@ -72,24 +83,77 @@ public class ChatActivity extends BaseActivity {
     private LinearLayout btnContainer;
     private ImageView iv_emoticons_normal;
     private ImageView iv_emoticons_checked;
-    private ProgressBar loadmorePB;
+    private ProgressBar loadMorePB;
     private Button btnMore;
     private LinearLayout more;
     private InputMethodManager manager;
+    private Drawable[] micImages;
+    @SuppressLint("HandlerLeak")
+    private Handler micImageHandler = new Handler() {
+        @Override
+        public void handleMessage(android.os.Message msg) {
+            // 切换msg切换图片
+            micImage.setImageDrawable(micImages[msg.what]);
+        }
+    };
+    private VoiceRecorder voiceRecorder;
+    private PowerManager.WakeLock wakeLock;
+    public String playMsgId;
+    public static final int CHAT_TYPE_SINGLE = 1;
+    public static final int CHAT_TYPE_GROUP = 2;
+    private TextView name;
+    private boolean isloading;
+    private final int pagesize = 20;
+    private boolean haveMoreData = true;
+    private static final int REQUEST_CODE_EMPTY_HISTORY = 2;
+    public static final int REQUEST_CODE_CONTEXT_MENU = 3;
+    private static final int REQUEST_CODE_MAP = 4;
+    public static final int REQUEST_CODE_TEXT = 5;
+    public static final int REQUEST_CODE_VOICE = 6;
+    public static final int REQUEST_CODE_PICTURE = 7;
+    public static final int REQUEST_CODE_LOCATION = 8;
+    public static final int REQUEST_CODE_NET_DISK = 9;
+    public static final int REQUEST_CODE_FILE = 10;
+    public static final int REQUEST_CODE_COPY_AND_PASTE = 11;
+    public static final int REQUEST_CODE_PICK_VIDEO = 12;
+    public static final int REQUEST_CODE_DOWNLOAD_VIDEO = 13;
+    public static final int REQUEST_CODE_VIDEO = 14;
+    public static final int REQUEST_CODE_DOWNLOAD_VOICE = 15;
+    public static final int REQUEST_CODE_SELECT_USER_CARD = 16;
+    public static final int REQUEST_CODE_SEND_USER_CARD = 17;
+    public static final int REQUEST_CODE_CAMERA = 18;
+    public static final int REQUEST_CODE_LOCAL = 19;
+    public static final int REQUEST_CODE_CLICK_DESTORY_IMG = 20;
+    public static final int REQUEST_CODE_GROUP_DETAIL = 21;
+    public static final int REQUEST_CODE_SELECT_VIDEO = 23;
+    public static final int REQUEST_CODE_SELECT_FILE = 24;
+    public static final int REQUEST_CODE_ADD_TO_BLACKLIST = 25;
+
+    public static final int RESULT_CODE_COPY = 1;
+    public static final int RESULT_CODE_DELETE = 2;
+    public static final int RESULT_CODE_FORWARD = 3;
+    public static final int RESULT_CODE_OPEN = 4;
+    public static final int RESULT_CODE_DWONLOAD = 5;
+    public static final int RESULT_CODE_TO_CLOUD = 6;
+    public static final int RESULT_CODE_EXIT_GROUP = 7;
 
     @Override
     protected void onCreate(Bundle arg0) {
         super.onCreate(arg0);
         setContentView(R.layout.activity_chat);
         toChatUsername = this.getIntent().getStringExtra("username");
-        TextView name = (TextView) this.findViewById(R.id.name);
-        name.setText(toChatUsername);
+        toUserNick = this.getIntent().getStringExtra("username");
+        toUserAvatar = this.getIntent().getStringExtra("username");
+        myUserNick = this.getIntent().getStringExtra("username");
+        myUserAvatar = this.getIntent().getStringExtra("username");
         initView();
+        setChatType();
         setListener();
         initExpression();
+        initVoice();
         getAllMessage();
         msgList = conversation.getAllMessages();
-        adapter = new MessageAdapter(msgList, ChatActivity.this);
+        adapter = new KenMessageAdapter(msgList, toChatUsername, ChatActivity.this);
         listView.setAdapter(adapter);
         int count = listView.getCount();
         if (count > 0) {
@@ -98,6 +162,7 @@ public class ChatActivity extends BaseActivity {
         EMClient.getInstance().chatManager().addMessageListener(msgListener);
         manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        wakeLock = ((PowerManager) getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "demo");
     }
 
     private void initView() {
@@ -117,7 +182,7 @@ public class ChatActivity extends BaseActivity {
         btnContainer = (LinearLayout) findViewById(R.id.ll_btn_container);
         iv_emoticons_normal = (ImageView) findViewById(R.id.iv_emoticons_normal);
         iv_emoticons_checked = (ImageView) findViewById(R.id.iv_emoticons_checked);
-        loadmorePB = (ProgressBar) findViewById(R.id.pb_load_more);
+        loadMorePB = (ProgressBar) findViewById(R.id.pb_load_more);
         btnMore = (Button) findViewById(R.id.btn_more);
         iv_emoticons_normal.setVisibility(View.VISIBLE);
         iv_emoticons_checked.setVisibility(View.GONE);
@@ -125,6 +190,35 @@ public class ChatActivity extends BaseActivity {
         //==========================================================================
         et_content.requestFocus();
         et_content.setBackgroundResource(R.drawable.edit_text_bg_normal);
+        name = (TextView) findViewById(R.id.name);
+        name.setText(toChatUsername);
+    }
+
+    private void setChatType() {
+        // 判断单聊还是群聊
+        chatType = getIntent().getIntExtra("chatType", CHAT_TYPE_SINGLE);
+        if (chatType == CHAT_TYPE_SINGLE) { // 单聊
+            toChatUsername = getIntent().getStringExtra("userId");
+            String toChatUserNick = getIntent().getStringExtra("userNick");
+            ((TextView) findViewById(R.id.name)).setText(toChatUserNick);
+            toUserNick = getIntent().getStringExtra("userNick");
+            toUserAvatar = getIntent().getStringExtra("userAvatar");
+            if (toUserNick == null) {
+                toUserNick = toChatUsername;
+            }
+            if (toUserAvatar == null) {
+                toUserAvatar = "0.png";
+            }
+        } else {
+            findViewById(R.id.container_video_call).setVisibility(View.GONE);
+            findViewById(R.id.container_voice_call).setVisibility(View.GONE);
+            toChatUsername = getIntent().getStringExtra("groupId");
+            String groupName = getIntent().getStringExtra("groupName");
+            ((TextView) findViewById(R.id.name)).setText(groupName);
+        }
+        // 读取本地自己的头像和昵称
+        myUserNick = LocalUserInfo.getInstance(ChatActivity.this).getUserInfo("nick");
+        myUserAvatar = LocalUserInfo.getInstance(ChatActivity.this).getUserInfo("avatar");
     }
 
     private void setListener() {
@@ -220,7 +314,7 @@ public class ChatActivity extends BaseActivity {
                 if (TextUtils.isEmpty(content)) {
                     return;
                 }
-                setMesaage(content);
+                sendText(content);
                 break;
             case R.id.et_content:
                 listView.setSelection(listView.getCount() - 1);
@@ -297,7 +391,7 @@ public class ChatActivity extends BaseActivity {
     }
 
     /**
-     * listView滑动监听listener
+     * listview滑动监听listener
      */
     private class ListScrollListener implements AbsListView.OnScrollListener {
 
@@ -305,6 +399,38 @@ public class ChatActivity extends BaseActivity {
         public void onScrollStateChanged(AbsListView view, int scrollState) {
             switch (scrollState) {
                 case AbsListView.OnScrollListener.SCROLL_STATE_IDLE:
+                    if (view.getFirstVisiblePosition() == 0 && !isloading
+                            && haveMoreData) {
+                        loadMorePB.setVisibility(View.VISIBLE);
+                        // sdk初始化加载的聊天记录为20条，到顶时去db里获取更多
+                        List<EMMessage> messages;
+                        try {
+                            // 获取更多messges，调用此方法的时候从db获取的messages
+                            // sdk会自动存入到此conversation中
+                            if (chatType == CHAT_TYPE_SINGLE)
+                                messages = conversation.loadMoreMsgFromDB(adapter.getItem(0).getMsgId(), pagesize);
+                            else
+                                messages = conversation.loadMoreMsgFromDB(adapter.getItem(0).getMsgId(), pagesize);
+                        } catch (Exception e1) {
+                            loadMorePB.setVisibility(View.GONE);
+                            return;
+                        }
+                        try {
+                            Thread.sleep(300);
+                        } catch (InterruptedException e) {
+                        }
+                        if (messages.size() != 0) {
+                            // 刷新ui
+                            adapter.notifyDataSetChanged();
+                            listView.setSelection(messages.size() - 1);
+                            if (messages.size() != pagesize)
+                                haveMoreData = false;
+                        } else {
+                            haveMoreData = false;
+                        }
+                        loadMorePB.setVisibility(View.GONE);
+                        isloading = false;
+                    }
                     break;
             }
         }
@@ -334,7 +460,12 @@ public class ChatActivity extends BaseActivity {
         }
     }
 
-    private void setMesaage(String content) {
+    /**
+     * 发送文本消息
+     *
+     * @param content
+     */
+    private void sendText(String content) {
         // 创建一条文本消息，content为消息文字内容，toChatUsername为对方用户或者群聊的id，后文皆是如此
         EMMessage message = EMMessage.createTxtSendMessage(content, toChatUsername);
         // 如果是群聊，设置chattype，默认是单聊
@@ -352,6 +483,41 @@ public class ChatActivity extends BaseActivity {
         et_content.clearFocus();
     }
 
+    /**
+     * 发送语音
+     *
+     * @param filePath
+     * @param fileName
+     * @param length
+     * @param isResend
+     */
+    private void sendVoice(String filePath, String fileName, String length, boolean isResend) {
+        if (!(new File(filePath).exists())) {
+            return;
+        }
+        try {
+            final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.VOICE);
+            if (chatType == CHAT_TYPE_GROUP) message.setChatType(ChatType.GroupChat);
+            message.setReceipt(toChatUsername);
+            message.setAttribute("toUserNick", toUserNick);
+            message.setAttribute("toUserAvatar", toUserAvatar);
+            message.setAttribute("useravatar", myUserAvatar);
+            message.setAttribute("usernick", myUserNick);
+            int len = Integer.parseInt(length);
+            EMVoiceMessageBody body = new EMVoiceMessageBody(new File(filePath), len);
+            message.addBody(body);
+            msgList.add(message);
+            adapter.notifyDataSetChanged();
+            listView.setSelection(listView.getCount() - 1);
+            setResult(RESULT_OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 发送消息回调
+     */
     EMMessageListener msgListener = new EMMessageListener() {
         @Override
         public void onMessageReceived(List<EMMessage> messages) {
@@ -414,92 +580,6 @@ public class ChatActivity extends BaseActivity {
             startActivity(intent);
         }
     }
-
-    @SuppressLint("InflateParams")
-    class MessageAdapter extends BaseAdapter {
-        private List<EMMessage> msgs;
-        private Context context;
-        private LayoutInflater inflater;
-
-        public MessageAdapter(List<EMMessage> msgs, Context context_) {
-            this.msgs = msgs;
-            this.context = context_;
-            inflater = LayoutInflater.from(context);
-        }
-
-        @Override
-        public int getCount() {
-            return msgs.size();
-        }
-
-        @Override
-        public EMMessage getItem(int position) {
-            return msgs.get(position);
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-        @Override
-        public int getItemViewType(int position) {
-            EMMessage message = getItem(position);
-            return message.direct() == EMMessage.Direct.RECEIVE ? 0 : 1;
-        }
-
-        @Override
-        public int getViewTypeCount() {
-            return 2;
-        }
-
-        @SuppressLint("InflateParams")
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            EMMessage message = getItem(position);
-            int viewType = getItemViewType(position);
-            ViewHolderLeft leftViewHolder = null;
-            ViewHolderRight rightViewHolder = null;
-            if (convertView == null) {
-                if (viewType == 0) {
-                    convertView = inflater.inflate(R.layout.item_message_received, parent, false);
-                    leftViewHolder = new ViewHolderLeft();
-                    leftViewHolder.tv = (TextView) convertView.findViewById(R.id.tv_chatcontent);
-                    convertView.setTag(leftViewHolder);
-
-                } else if (viewType == 1) {
-                    convertView = inflater.inflate(R.layout.item_message_sent, parent, false);
-                    rightViewHolder = new ViewHolderRight();
-                    rightViewHolder.tv = (TextView) convertView.findViewById(R.id.tv_chatcontent);
-                    convertView.setTag(rightViewHolder);
-                }
-            } else {
-                if (viewType == 0) {
-                    leftViewHolder = (ViewHolderLeft) convertView.getTag();
-                } else if (viewType == 1) {
-                    rightViewHolder = (ViewHolderRight) convertView.getTag();
-                }
-            }
-            EMTextMessageBody txtBody = (EMTextMessageBody) message.getBody();
-            // 设置内容
-            Spannable span = SmileUtils.getSmiledText(context, txtBody.getMessage());
-            if (viewType == 0) {
-                leftViewHolder.tv.setText(span, TextView.BufferType.SPANNABLE);
-            } else if (viewType == 1) {
-                rightViewHolder.tv.setText(span, TextView.BufferType.SPANNABLE);
-            }
-            return convertView;
-        }
-    }
-
-    public static class ViewHolderLeft {
-        TextView tv;
-    }
-
-    public static class ViewHolderRight {
-        TextView tv;
-    }
-
 
     /**
      * 手机返回键
@@ -595,5 +675,128 @@ public class ChatActivity extends BaseActivity {
             }
         });
         return view;
+    }
+
+    /**
+     * 初始化语音
+     */
+    private void initVoice() {
+        // 动画资源文件,用于录制语音时
+        micImages = new Drawable[]{
+                getResources().getDrawable(R.mipmap.record_animate_01),
+                getResources().getDrawable(R.mipmap.record_animate_02),
+                getResources().getDrawable(R.mipmap.record_animate_03),
+                getResources().getDrawable(R.mipmap.record_animate_04),
+                getResources().getDrawable(R.mipmap.record_animate_05),
+                getResources().getDrawable(R.mipmap.record_animate_06),
+                getResources().getDrawable(R.mipmap.record_animate_07),
+                getResources().getDrawable(R.mipmap.record_animate_08),
+                getResources().getDrawable(R.mipmap.record_animate_09),
+                getResources().getDrawable(R.mipmap.record_animate_10),
+                getResources().getDrawable(R.mipmap.record_animate_11),
+                getResources().getDrawable(R.mipmap.record_animate_12),
+                getResources().getDrawable(R.mipmap.record_animate_13),
+                getResources().getDrawable(R.mipmap.record_animate_14),};
+        voiceRecorder = new VoiceRecorder(micImageHandler);
+        buttonPressToSpeak.setOnTouchListener(new PressToSpeakListener());
+    }
+
+    /**
+     * 按住说话listener
+     */
+    class PressToSpeakListener implements View.OnTouchListener {
+        @SuppressLint({"ClickableViewAccessibility", "Wakelock"})
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (!CommonUtils.isExitsSdcard()) {
+                        Toast.makeText(ChatActivity.this, "发送语音需要sdcard支持！", Toast.LENGTH_SHORT).show();
+                        return false;
+                    }
+                    try {
+                        v.setPressed(true);
+                        wakeLock.acquire();
+                        if (VoicePlayClickListener.isPlaying)
+                            VoicePlayClickListener.currentPlayListener.stopPlayVoice();
+                        recordingContainer.setVisibility(View.VISIBLE);
+                        recordingHint.setText(getString(R.string.move_up_to_cancel));
+                        recordingHint.setBackgroundColor(Color.TRANSPARENT);
+                        voiceRecorder.startRecording(null, toChatUsername, getApplicationContext());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        v.setPressed(false);
+                        if (wakeLock.isHeld())
+                            wakeLock.release();
+                        if (voiceRecorder != null)
+                            voiceRecorder.discardRecording();
+                        recordingContainer.setVisibility(View.INVISIBLE);
+                        Toast.makeText(ChatActivity.this, R.string.recoding_fail,
+                                Toast.LENGTH_SHORT).show();
+                        return false;
+                    }
+
+                    return true;
+                case MotionEvent.ACTION_MOVE: {
+                    if (event.getY() < 0) {
+                        recordingHint.setText(getString(R.string.release_to_cancel));
+                        recordingHint.setBackgroundResource(R.drawable.recording_text_hint_bg);
+                    } else {
+                        recordingHint.setText(getString(R.string.move_up_to_cancel));
+                        recordingHint.setBackgroundColor(Color.TRANSPARENT);
+                    }
+                    return true;
+                }
+                case MotionEvent.ACTION_UP:
+                    v.setPressed(false);
+                    recordingContainer.setVisibility(View.INVISIBLE);
+                    if (wakeLock.isHeld())
+                        wakeLock.release();
+                    if (event.getY() < 0) {
+                        // discard the recorded audio.
+                        voiceRecorder.discardRecording();
+                    } else {
+                        // stop recording and send voice file
+                        try {
+                            int length = voiceRecorder.stopRecoding();
+                            if (length > 0) {
+                                sendVoice(voiceRecorder.getVoiceFilePath(), voiceRecorder.getVoiceFileName(toChatUsername), Integer.toString(length), false);
+                            } else if (length == EMError.FILE_INVALID) {
+                                Toast.makeText(getApplicationContext(), "无录音权限", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(getApplicationContext(), "录音时间太短", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(ChatActivity.this, "发送失败，请检测服务器是否连接", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    return true;
+                default:
+                    recordingContainer.setVisibility(View.INVISIBLE);
+                    if (voiceRecorder != null)
+                        voiceRecorder.discardRecording();
+                    return false;
+            }
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (wakeLock.isHeld())
+            wakeLock.release();
+        if (VoicePlayClickListener.isPlaying && VoicePlayClickListener.currentPlayListener != null) {
+            // 停止语音播放
+            VoicePlayClickListener.currentPlayListener.stopPlayVoice();
+        }
+        try {
+            // 停止录音
+            if (voiceRecorder.isRecording()) {
+                voiceRecorder.discardRecording();
+                recordingContainer.setVisibility(View.INVISIBLE);
+            }
+        } catch (Exception e) {
+        }
     }
 }
