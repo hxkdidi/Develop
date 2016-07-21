@@ -1,6 +1,5 @@
 package com.kenos.kenos.activity;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
@@ -20,10 +19,9 @@ import com.hyphenate.exceptions.HyphenateException;
 import com.kenos.kenos.R;
 import com.kenos.kenos.app.KenApplication;
 import com.kenos.kenos.base.BaseActivity;
-import com.kenos.kenos.db.KenDBManager;
 import com.kenos.kenos.db.EaseUser;
+import com.kenos.kenos.db.KenDBManager;
 import com.kenos.kenos.utils.EaseCommonUtils;
-
 
 import java.util.HashMap;
 import java.util.List;
@@ -101,7 +99,6 @@ public class LoginActivity extends BaseActivity {
         final ProgressDialog pd = new ProgressDialog(LoginActivity.this);
         pd.setCanceledOnTouchOutside(false);
         pd.setOnCancelListener(new OnCancelListener() {
-
             @Override
             public void onCancel(DialogInterface dialog) {
                 Log.d(TAG, "EMClient.getInstance().onCancel");
@@ -152,8 +149,7 @@ public class LoginActivity extends BaseActivity {
                 runOnUiThread(new Runnable() {
                     public void run() {
                         pd.dismiss();
-                        Toast.makeText(getApplicationContext(), getString(R.string.Login_failed) + message,
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), getString(R.string.Login_failed) + message, Toast.LENGTH_SHORT).show();
                     }
                 });
             }

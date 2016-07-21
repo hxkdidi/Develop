@@ -349,9 +349,6 @@ public class ChatActivity extends BaseActivity {
                     buttonSend.setVisibility(View.VISIBLE);
                 }
                 break;
-            case R.id.btn_press_to_speak:
-
-                break;
             case R.id.iv_back:
                 finish();
                 break;
