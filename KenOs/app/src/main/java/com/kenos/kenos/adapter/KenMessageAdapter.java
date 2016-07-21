@@ -528,7 +528,7 @@ public class KenMessageAdapter extends BaseAdapter {
                     holder.tv.setVisibility(View.GONE);
                 }
                 if (message.status() == EMMessage.Status.SUCCESS) {
-                    holder.pb.setVisibility(View.VISIBLE);
+                    holder.pb.setVisibility(View.GONE);
                 } else if (message.status() == EMMessage.Status.FAIL) {
                     Toast.makeText(context, context.getString(R.string.send_fail) + context.getString(R.string.connect_failuer_toast), Toast.LENGTH_LONG).show();
                 }
