@@ -28,8 +28,6 @@ import com.kenos.kenos.Constant;
 import com.kenos.kenos.R;
 import com.kenos.kenos.activity.ChatActivity;
 import com.kenos.kenos.listener.VoicePlayClickListener;
-import com.kenos.kenos.preference.LocalUserInfo;
-import com.kenos.kenos.task.LoadUserAvatar;
 import com.kenos.kenos.utils.SmileUtils;
 import com.kenos.kenos.view.KenAlertDialog;
 
@@ -530,7 +528,7 @@ public class KenMessageAdapter extends BaseAdapter {
                     holder.tv.setVisibility(View.GONE);
                 }
                 if (message.status() == EMMessage.Status.SUCCESS) {
-
+                    holder.pb.setVisibility(View.VISIBLE);
                 } else if (message.status() == EMMessage.Status.FAIL) {
                     Toast.makeText(context, context.getString(R.string.send_fail) + context.getString(R.string.connect_failuer_toast), Toast.LENGTH_LONG).show();
                 }

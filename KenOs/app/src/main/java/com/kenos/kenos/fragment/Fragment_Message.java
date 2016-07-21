@@ -18,6 +18,7 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMTextMessageBody;
+import com.hyphenate.exceptions.HyphenateException;
 import com.hyphenate.util.DateUtils;
 import com.kenos.kenos.Constant;
 import com.kenos.kenos.R;
@@ -71,12 +72,19 @@ public class Fragment_Message extends BaseFragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 EMConversation conversation = adapter.getItem(position);
                 String username = conversation.getUserName();
+                EMMessage message = conversation.getLastMessage();
                 if (username.equals(KenApplication.getInstance().getCurrentUserName()))
                     Toast.makeText(ctx, st2, Toast.LENGTH_SHORT).show();
                 else {
                     // 进入聊天页面
                     Intent intent = new Intent(ctx, ChatActivity.class);
-                    intent.putExtra("username", username);
+                    intent.putExtra("userName", username);
+                    try {
+                        intent.putExtra("userNick", message.getStringAttribute("toUserNick"));
+                        intent.putExtra("userAvatar", message.getStringAttribute("toUserAvatar"));
+                    } catch (HyphenateException e) {
+                        e.printStackTrace();
+                    }
                     startActivity(intent);
                 }
             }

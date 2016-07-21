@@ -57,7 +57,7 @@ public class ChatActivity extends BaseActivity {
     private ListView listView;
     private int chatType = 1;
     private String toChatUsername;
-    private String toUserNick;
+    private String toChatUserNick;
     private String toUserAvatar;
     private String myUserNick;
     private String myUserAvatar;
@@ -137,15 +137,11 @@ public class ChatActivity extends BaseActivity {
     public static final int RESULT_CODE_TO_CLOUD = 6;
     public static final int RESULT_CODE_EXIT_GROUP = 7;
 
+
     @Override
     protected void onCreate(Bundle arg0) {
         super.onCreate(arg0);
         setContentView(R.layout.activity_chat);
-        toChatUsername = this.getIntent().getStringExtra("username");
-        toUserNick = this.getIntent().getStringExtra("username");
-        toUserAvatar = this.getIntent().getStringExtra("username");
-        myUserNick = this.getIntent().getStringExtra("username");
-        myUserAvatar = this.getIntent().getStringExtra("username");
         initView();
         setChatType();
         setListener();
@@ -198,13 +194,13 @@ public class ChatActivity extends BaseActivity {
         // 判断单聊还是群聊
         chatType = getIntent().getIntExtra("chatType", CHAT_TYPE_SINGLE);
         if (chatType == CHAT_TYPE_SINGLE) { // 单聊
-            toChatUsername = getIntent().getStringExtra("userId");
-            String toChatUserNick = getIntent().getStringExtra("userNick");
+            toChatUsername = getIntent().getStringExtra("userName");
+            toChatUserNick = getIntent().getStringExtra("userNick");
             ((TextView) findViewById(R.id.name)).setText(toChatUserNick);
-            toUserNick = getIntent().getStringExtra("userNick");
+            toChatUserNick = getIntent().getStringExtra("userNick");
             toUserAvatar = getIntent().getStringExtra("userAvatar");
-            if (toUserNick == null) {
-                toUserNick = toChatUsername;
+            if (toChatUserNick == null) {
+                toChatUserNick = toChatUsername;
             }
             if (toUserAvatar == null) {
                 toUserAvatar = "0.png";
@@ -212,7 +208,7 @@ public class ChatActivity extends BaseActivity {
         } else {
             findViewById(R.id.container_video_call).setVisibility(View.GONE);
             findViewById(R.id.container_voice_call).setVisibility(View.GONE);
-            toChatUsername = getIntent().getStringExtra("groupId");
+            toChatUsername = getIntent().getStringExtra("userName");
             String groupName = getIntent().getStringExtra("groupName");
             ((TextView) findViewById(R.id.name)).setText(groupName);
         }
@@ -499,7 +495,7 @@ public class ChatActivity extends BaseActivity {
             final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.VOICE);
             if (chatType == CHAT_TYPE_GROUP) message.setChatType(ChatType.GroupChat);
             message.setReceipt(toChatUsername);
-            message.setAttribute("toUserNick", toUserNick);
+            message.setAttribute("toUserNick", toChatUserNick);
             message.setAttribute("toUserAvatar", toUserAvatar);
             message.setAttribute("useravatar", myUserAvatar);
             message.setAttribute("usernick", myUserNick);

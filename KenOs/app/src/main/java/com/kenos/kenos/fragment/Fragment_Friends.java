@@ -248,6 +248,8 @@ public class Fragment_Friends extends BaseFragment {
         // 进入聊天页面
         Intent intent = new Intent(ctx, ChatActivity.class);
         intent.putExtra("username", easeUser.getUsername());
+        intent.putExtra("userAvatar", easeUser.getAvatar());
+        intent.putExtra("userNick", easeUser.getNick());
         startActivity(intent);
     }
 }
