@@ -3,8 +3,12 @@ package com.kenos.kenos.activity;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.media.ThumbnailUtils;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
@@ -12,6 +16,7 @@ import android.support.v4.view.ViewPager;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -28,8 +33,10 @@ import android.widget.Toast;
 
 import com.hyphenate.EMError;
 import com.hyphenate.EMMessageListener;
+import com.hyphenate.chat.EMChatManager;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMConversation;
+import com.hyphenate.chat.EMLocationMessageBody;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMMessage.ChatType;
 import com.hyphenate.chat.EMVoiceMessageBody;
@@ -49,6 +56,8 @@ import com.kenos.kenos.view.ExpandGridView;
 import com.kenos.kenos.view.PasteEditText;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -370,6 +379,79 @@ public class ChatActivity extends BaseActivity {
                     }
                 }
                 break;
+            case R.id.btn_location:
+                startActivityForResult(new Intent(this, BaiduMapActivity.class), REQUEST_CODE_MAP);
+                break;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == 100) {
+            finish();
+        }
+
+        if (resultCode == RESULT_CODE_EXIT_GROUP) {//退群
+            setResult(RESULT_OK);
+            finish();
+            return;
+        }
+        if (requestCode == REQUEST_CODE_CONTEXT_MENU) {
+            switch (resultCode) {
+                case RESULT_CODE_COPY: // 复制消息
+
+                    break;
+                case RESULT_CODE_DELETE: // 删除消息
+
+                    break;
+                case RESULT_CODE_FORWARD: // 转发消息
+
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        if (resultCode == RESULT_OK) { // 清空消息
+            if (requestCode == REQUEST_CODE_EMPTY_HISTORY) {
+
+            } else if (requestCode == REQUEST_CODE_CAMERA) { // 发送照片
+
+            } else if (requestCode == REQUEST_CODE_SELECT_VIDEO) { // 发送本地选择的视频
+
+
+            } else if (requestCode == REQUEST_CODE_LOCAL) { // 发送本地图片
+
+            } else if (requestCode == REQUEST_CODE_SELECT_FILE) { // 发送选择的文件
+
+
+            } else if (requestCode == REQUEST_CODE_MAP) { // 地图
+                double latitude = data.getDoubleExtra("latitude", 0);
+                double longitude = data.getDoubleExtra("longitude", 0);
+                String locationAddress = data.getStringExtra("address");
+                if (locationAddress != null && !locationAddress.equals("")) {
+                    sendLocationMsg(latitude, longitude, locationAddress);
+                } else {
+                    Toast.makeText(this, "无法获取到您的位置信息！", Toast.LENGTH_SHORT).show();
+                }
+                // 重发消息
+            } else if (requestCode == REQUEST_CODE_TEXT
+                    || requestCode == REQUEST_CODE_VOICE
+                    || requestCode == REQUEST_CODE_PICTURE
+                    || requestCode == REQUEST_CODE_LOCATION
+                    || requestCode == REQUEST_CODE_VIDEO
+                    || requestCode == REQUEST_CODE_FILE) {
+
+            } else if (requestCode == REQUEST_CODE_COPY_AND_PASTE) {//粘贴
+
+            } else if (requestCode == REQUEST_CODE_ADD_TO_BLACKLIST) { // 移入黑名单
+
+            } else if (conversation.getAllMsgCount() > 0) {//有消息
+
+            } else if (requestCode == REQUEST_CODE_GROUP_DETAIL) {//群组详情
+
+            }
         }
     }
 
@@ -480,11 +562,9 @@ public class ChatActivity extends BaseActivity {
      * 发送语音
      *
      * @param filePath
-     * @param fileName
      * @param length
-     * @param isResend
      */
-    private void sendVoice(String filePath, String fileName, String length, boolean isResend) {
+    private void sendVoice(String filePath, String length) {
         if (!(new File(filePath).exists())) {
             return;
         }
@@ -506,6 +586,31 @@ public class ChatActivity extends BaseActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 发送位置信息
+     *
+     * @param latitude
+     * @param longitude
+     * @param locationAddress
+     */
+    private void sendLocationMsg(double latitude, double longitude, String locationAddress) {
+        EMMessage message = EMMessage.createSendMessage(EMMessage.Type.LOCATION);
+        if (chatType == CHAT_TYPE_GROUP) message.setChatType(ChatType.GroupChat);
+        EMLocationMessageBody locBody = new EMLocationMessageBody(locationAddress, latitude, longitude);
+        message.addBody(locBody);
+        message.setReceipt(toChatUsername);
+        message.setAttribute("toUserNick", toChatUserNick);
+        message.setAttribute("toUserAvatar", toUserAvatar);
+        message.setAttribute("useravatar", myUserAvatar);
+        message.setAttribute("usernick", myUserNick);
+        msgList.add(message);
+        listView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        listView.setSelection(listView.getCount() - 1);
+        setResult(RESULT_OK);
+
     }
 
     /**
@@ -753,7 +858,7 @@ public class ChatActivity extends BaseActivity {
                         try {
                             int length = voiceRecorder.stopRecoding();
                             if (length > 0) {
-                                sendVoice(voiceRecorder.getVoiceFilePath(), voiceRecorder.getVoiceFileName(toChatUsername), Integer.toString(length), false);
+                                sendVoice(voiceRecorder.getVoiceFilePath(), Integer.toString(length));
                             } else if (length == EMError.FILE_INVALID) {
                                 Toast.makeText(getApplicationContext(), "无录音权限", Toast.LENGTH_SHORT).show();
                             } else {

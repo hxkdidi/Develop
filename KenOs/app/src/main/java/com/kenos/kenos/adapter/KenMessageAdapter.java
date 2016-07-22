@@ -19,13 +19,16 @@ import android.widget.Toast;
 
 import com.hyphenate.EMCallBack;
 import com.hyphenate.chat.EMClient;
+import com.hyphenate.chat.EMLocationMessageBody;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMTextMessageBody;
 import com.hyphenate.chat.EMVoiceMessageBody;
 import com.hyphenate.exceptions.HyphenateException;
 import com.hyphenate.util.DateUtils;
+import com.hyphenate.util.LatLng;
 import com.kenos.kenos.Constant;
 import com.kenos.kenos.R;
+import com.kenos.kenos.activity.BaiduMapActivity;
 import com.kenos.kenos.activity.ChatActivity;
 import com.kenos.kenos.listener.VoicePlayClickListener;
 import com.kenos.kenos.utils.SmileUtils;
@@ -187,7 +190,14 @@ public class KenMessageAdapter extends BaseAdapter {
                 holder = new ViewHolder();
                 convertView = createViewByMessage(message, position);
                 if (message.getType() == EMMessage.Type.LOCATION) {
-
+                    try {
+                        holder.head_iv = (ImageView) convertView.findViewById(R.id.iv_userhead);
+                        holder.tv = (TextView) convertView.findViewById(R.id.tv_location);
+                        holder.pb = (ProgressBar) convertView.findViewById(R.id.pb_sending);
+                        holder.status_iv = (ImageView) convertView.findViewById(R.id.msg_status);
+                        holder.tv_userId = (TextView) convertView.findViewById(R.id.tv_userid);
+                    } catch (Exception e) {
+                    }
                 } else if (message.getType() == EMMessage.Type.IMAGE) {
 
                 } else if (message.getType() == EMMessage.Type.VOICE) {
@@ -284,6 +294,7 @@ public class KenMessageAdapter extends BaseAdapter {
                         handleTextMessage(message, holder);
                     break;
                 case LOCATION: // 位置
+                    handleLocationMessage(message, holder);
                     break;
                 case VOICE: // 语音
                     handleVoiceMessage(message, holder);
@@ -326,6 +337,11 @@ public class KenMessageAdapter extends BaseAdapter {
                 holder.head_iv.setOnLongClickListener(new View.OnLongClickListener() {
                     @Override
                     public boolean onLongClick(View v) {
+                        Intent intent = new Intent(activity, KenAlertDialog.class);
+                        intent.putExtra("msg", "移入到黑名单？");
+                        intent.putExtra("cancel", true);
+                        intent.putExtra("position", position);
+                        activity.startActivityForResult(intent, ChatActivity.REQUEST_CODE_ADD_TO_BLACKLIST);
                         return true;
                     }
                 });
@@ -351,6 +367,38 @@ public class KenMessageAdapter extends BaseAdapter {
             }
         }
         return convertView;
+    }
+
+    /**
+     * 处理定位消息
+     *
+     * @param message
+     * @param holder
+     */
+    private void handleLocationMessage(EMMessage message, ViewHolder holder) {
+        EMLocationMessageBody locBody = (EMLocationMessageBody) message.getBody();
+        holder.tv.setText(locBody.getAddress());
+        LatLng loc = new LatLng(locBody.getLatitude(), locBody.getLongitude());
+        holder.tv.setOnClickListener(new MapClickListener(loc, locBody.getAddress()));
+        if (message.direct() == EMMessage.Direct.RECEIVE) {
+            return;
+        }
+        // deal with send message
+        switch (message.status()) {
+            case SUCCESS:
+                holder.pb.setVisibility(View.GONE);
+                holder.status_iv.setVisibility(View.GONE);
+                break;
+            case FAIL:
+                holder.pb.setVisibility(View.GONE);
+                holder.status_iv.setVisibility(View.VISIBLE);
+                break;
+            case INPROGRESS:
+                holder.pb.setVisibility(View.VISIBLE);
+                break;
+            default:
+                sendMsgInBackground(message, holder);
+        }
     }
 
     /**
@@ -557,5 +605,31 @@ public class KenMessageAdapter extends BaseAdapter {
         TextView tv_file_name;
         TextView tv_file_size;
         TextView tv_file_download_state;
+    }
+
+    /*
+    * 点击地图消息listener
+    */
+    class MapClickListener implements View.OnClickListener {
+
+        LatLng location;
+        String address;
+
+        public MapClickListener(LatLng loc, String address) {
+            location = loc;
+            this.address = address;
+
+        }
+
+        @Override
+        public void onClick(View v) {
+            Intent intent;
+            intent = new Intent(context, BaiduMapActivity.class);
+            intent.putExtra("latitude", location.latitude);
+            intent.putExtra("longitude", location.longitude);
+            intent.putExtra("address", address);
+            activity.startActivity(intent);
+        }
+
     }
 }

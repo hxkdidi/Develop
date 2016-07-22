@@ -86,31 +86,50 @@
                 <action android:name="android.intent.action.USER_PRESENT"/>
             </intent-filter>
         </receiver>
+        <!-- 百度地图所需的service -->
+        <service
+            android:name="com.baidu.location.f"
+            android:enabled="true"
+            android:process=":remote">
+            <intent-filter>
+                <action android:name="com.baidu.location.service_v2.2">
+                </action>
+            </intent-filter>
+        </service>
 
+        <!-- meta-data需要写在application中 -->
+        <meta-data
+            android:name="com.baidu.lbsapi.API_KEY"
+            android:value="3su3tGSoAGoupTu9daKimw7S"/>
+        <!--主页-->
         <activity
             android:name=".activity.MainActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             >
         </activity>
+        <!--添加联系人-->
         <activity
             android:name=".activity.AddContactActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan"
             >
         </activity>
+        <!--聊天-->
         <activity
             android:name=".activity.ChatActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="stateHidden|adjustResize"
             >
         </activity>
+        <!--登录-->
         <activity
             android:name=".activity.LoginActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan"
             >
         </activity>
+        <!--开屏页-->
         <activity
             android:name=".activity.SplashActivity"
             android:screenOrientation="portrait"
@@ -121,12 +140,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!--好友申请通知-->
         <activity
             android:name=".activity.NewFriendsMsgActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan"
             >
         </activity>
+        <!--注册-->
         <activity
             android:name=".activity.RegisterActivity"
             android:screenOrientation="portrait"
@@ -137,6 +158,13 @@
             android:name=".view.KenAlertDialog"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan"
+            >
+        </activity>
+        <!-- 地图 -->
+        <activity
+            android:name=".activity.BaiduMapActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="portrait"
             >
         </activity>
     </application>
