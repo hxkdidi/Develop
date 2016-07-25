@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,7 +28,7 @@ import com.kenos.kenos.base.BaseFragment;
 import com.kenos.kenos.db.EaseUser;
 import com.kenos.kenos.utils.EaseCommonUtils;
 import com.kenos.kenos.utils.PingYinUtil;
-import com.kenos.kenos.view.SideBar;
+import com.kenos.kenos.view.swipe.NewSideBar;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,11 +43,12 @@ import java.util.Map;
  * @author allenjuns@yahoo.com
  */
 public class Fragment_Friends extends BaseFragment {
+    private static final String TAG = Fragment_Friends.class.getSimpleName();
     private Activity ctx;
     private View layout, layout_head;
     private Map<String, EaseUser> contactsMap;
     private ListView lvContact;
-    private SideBar indexBar;
+    private NewSideBar indexBar;
     private TextView mDialogText;
     private WindowManager mWindowManager;
     protected List<EaseUser> contactList = new ArrayList<EaseUser>();
@@ -69,8 +71,8 @@ public class Fragment_Friends extends BaseFragment {
     private void initView(View view) {
         mWindowManager = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
         lvContact = (ListView) layout.findViewById(R.id.lvContact);
-        indexBar = (SideBar) layout.findViewById(R.id.sideBar);
-        indexBar.setListView(lvContact);
+        indexBar = (NewSideBar) layout.findViewById(R.id.sideBar);
+//        indexBar.setListView(lvContact);
         mDialogText = (TextView) LayoutInflater.from(getActivity()).inflate(R.layout.list_position, null);
         mDialogText.setVisibility(View.INVISIBLE);
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
@@ -79,7 +81,6 @@ public class Fragment_Friends extends BaseFragment {
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
         mWindowManager.addView(mDialogText, lp);
-        indexBar.setTextView(mDialogText);
         layout_head = ctx.getLayoutInflater().inflate(R.layout.layout_head_friend, null);
         lvContact.addHeaderView(layout_head);
         view.findViewById(R.id.layout_addfriend).setOnClickListener(this);
@@ -88,6 +89,13 @@ public class Fragment_Friends extends BaseFragment {
         getContactList();
         lvContact.setAdapter(new ContactAdapter(ctx, contactList));
         lvContact.setOnItemClickListener(this);
+        indexBar.setOnTouchingLetterChangedListener(new NewSideBar.OnTouchingLetterChangedListener() {
+            @Override
+            public void onTouchingLetterChanged(String s) {
+                Log.d(TAG, "select " + s);
+                mDialogText.setText("select " + s);
+            }
+        });
     }
 
     /**
