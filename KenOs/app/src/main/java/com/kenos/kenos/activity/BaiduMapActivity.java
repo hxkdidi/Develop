@@ -33,7 +33,6 @@ import com.baidu.location.BDLocationListener;
 import com.baidu.location.BDNotifyListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
-import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BaiduMapOptions;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
@@ -49,6 +48,7 @@ import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.CoordinateConverter;
 import com.kenos.kenos.R;
 import com.kenos.kenos.base.BaseActivity;
+import com.baidu.mapapi.SDKInitializer;
 
 public class BaiduMapActivity extends BaseActivity {
 
@@ -58,9 +58,7 @@ public class BaiduMapActivity extends BaseActivity {
     LocationClient mLocClient;
     public MyLocationListenner myListener = new MyLocationListenner();
     public NotifyLister mNotifyer = null;
-
     Button sendButton = null;
-
     EditText indexText = null;
     int index = 0;
     // LocationData locData = null;
@@ -93,7 +91,7 @@ public class BaiduMapActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         instance = this;
         //在使用SDK各组件之前初始化context信息，传入ApplicationContext
-        //注意该方法要再setContentView方法之前实现  
+        //注意该方法要再setContentView方法之前实现
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_baidumap);
         mMapView = (MapView) findViewById(R.id.bmapView);

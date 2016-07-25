@@ -145,6 +145,7 @@ public class ChatActivity extends BaseActivity {
     public static final int RESULT_CODE_DWONLOAD = 5;
     public static final int RESULT_CODE_TO_CLOUD = 6;
     public static final int RESULT_CODE_EXIT_GROUP = 7;
+    private ImageView btnLocation;
 
 
     @Override
@@ -192,6 +193,7 @@ public class ChatActivity extends BaseActivity {
         iv_emoticons_normal.setVisibility(View.VISIBLE);
         iv_emoticons_checked.setVisibility(View.GONE);
         more = (LinearLayout) findViewById(R.id.more);
+        btnLocation = (ImageView) findViewById(R.id.btn_location);
         //==========================================================================
         et_content.requestFocus();
         et_content.setBackgroundResource(R.drawable.edit_text_bg_normal);
@@ -236,6 +238,7 @@ public class ChatActivity extends BaseActivity {
         buttonPressToSpeak.setOnClickListener(this);
         more.setOnClickListener(this);
         btnMore.setOnClickListener(this);
+        btnLocation.setOnClickListener(this);
         listView.setOnScrollListener(new ListScrollListener());
         listView.setOnTouchListener(new View.OnTouchListener() {
             @SuppressLint("ClickableViewAccessibility")
