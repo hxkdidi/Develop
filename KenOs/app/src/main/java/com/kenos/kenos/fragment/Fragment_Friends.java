@@ -3,17 +3,14 @@ package com.kenos.kenos.fragment;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import android.widget.LinearLayout.LayoutParams;
 import android.widget.ListView;
 import android.widget.SectionIndexer;
 import android.widget.TextView;
@@ -28,7 +25,7 @@ import com.kenos.kenos.base.BaseFragment;
 import com.kenos.kenos.db.EaseUser;
 import com.kenos.kenos.utils.EaseCommonUtils;
 import com.kenos.kenos.utils.PingYinUtil;
-import com.kenos.kenos.view.swipe.NewSideBar;
+import com.kenos.kenos.view.NewSideBar;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,9 +46,7 @@ public class Fragment_Friends extends BaseFragment {
     private Map<String, EaseUser> contactsMap;
     private ListView lvContact;
     private NewSideBar indexBar;
-    private TextView mDialogText;
-    private WindowManager mWindowManager;
-    protected List<EaseUser> contactList = new ArrayList<EaseUser>();
+    protected List<EaseUser> contactList = new ArrayList<>();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -69,18 +64,9 @@ public class Fragment_Friends extends BaseFragment {
     }
 
     private void initView(View view) {
-        mWindowManager = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
         lvContact = (ListView) layout.findViewById(R.id.lvContact);
         indexBar = (NewSideBar) layout.findViewById(R.id.sideBar);
-//        indexBar.setListView(lvContact);
-        mDialogText = (TextView) LayoutInflater.from(getActivity()).inflate(R.layout.list_position, null);
-        mDialogText.setVisibility(View.INVISIBLE);
-        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION,
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT);
-        mWindowManager.addView(mDialogText, lp);
+        indexBar.setListView(lvContact);
         layout_head = ctx.getLayoutInflater().inflate(R.layout.layout_head_friend, null);
         lvContact.addHeaderView(layout_head);
         view.findViewById(R.id.layout_addfriend).setOnClickListener(this);
@@ -93,7 +79,6 @@ public class Fragment_Friends extends BaseFragment {
             @Override
             public void onTouchingLetterChanged(String s) {
                 Log.d(TAG, "select " + s);
-                mDialogText.setText("select " + s);
             }
         });
     }
@@ -209,8 +194,85 @@ public class Fragment_Friends extends BaseFragment {
                     if (!blackList.contains(entry.getKey())) {
                         // 不显示黑名单中的用户
                         EaseUser user = entry.getValue();
-                        EaseCommonUtils.setUserInitialLetter(user);
                         contactList.add(user);
+                        EaseUser user1 = new EaseUser("安以轩");
+                        EaseUser user2 = new EaseUser("百度");
+                        EaseUser user3 = new EaseUser("参加");
+                        EaseUser user4 = new EaseUser("大胆");
+                        EaseUser user5 = new EaseUser("嗯嗯");
+                        EaseUser user6 = new EaseUser("凡客");
+                        EaseUser user7 = new EaseUser("告诉");
+                        EaseUser user8 = new EaseUser("好人");
+                        EaseUser user9 = new EaseUser("i");
+                        EaseUser user10 = new EaseUser("杰克");
+                        EaseUser user11 = new EaseUser("卡卡");
+                        EaseUser user25 = new EaseUser("拉卡拉");
+                        EaseUser user12 = new EaseUser("麻麻");
+                        EaseUser user13 = new EaseUser("娜娜");
+                        EaseUser user14 = new EaseUser("欧洲");
+                        EaseUser user15 = new EaseUser("啪啪");
+                        EaseUser user16 = new EaseUser("球员");
+                        EaseUser user17 = new EaseUser("仍然");
+                        EaseUser user18 = new EaseUser("试试");
+                        EaseUser user19 = new EaseUser("套套");
+                        EaseUser user20 = new EaseUser("uu");
+                        EaseUser user26 = new EaseUser("vv");
+                        EaseUser user21 = new EaseUser("威威");
+                        EaseUser user22 = new EaseUser("消息");
+                        EaseUser user23 = new EaseUser("意义");
+                        EaseUser user24 = new EaseUser("吱吱吱");
+                        EaseCommonUtils.setUserInitialLetter(user1);
+                        EaseCommonUtils.setUserInitialLetter(user2);
+                        EaseCommonUtils.setUserInitialLetter(user3);
+                        EaseCommonUtils.setUserInitialLetter(user4);
+                        EaseCommonUtils.setUserInitialLetter(user5);
+                        EaseCommonUtils.setUserInitialLetter(user6);
+                        EaseCommonUtils.setUserInitialLetter(user7);
+                        EaseCommonUtils.setUserInitialLetter(user8);
+                        EaseCommonUtils.setUserInitialLetter(user9);
+                        EaseCommonUtils.setUserInitialLetter(user10);
+                        EaseCommonUtils.setUserInitialLetter(user11);
+                        EaseCommonUtils.setUserInitialLetter(user12);
+                        EaseCommonUtils.setUserInitialLetter(user13);
+                        EaseCommonUtils.setUserInitialLetter(user14);
+                        EaseCommonUtils.setUserInitialLetter(user15);
+                        EaseCommonUtils.setUserInitialLetter(user16);
+                        EaseCommonUtils.setUserInitialLetter(user17);
+                        EaseCommonUtils.setUserInitialLetter(user18);
+                        EaseCommonUtils.setUserInitialLetter(user19);
+                        EaseCommonUtils.setUserInitialLetter(user20);
+                        EaseCommonUtils.setUserInitialLetter(user21);
+                        EaseCommonUtils.setUserInitialLetter(user22);
+                        EaseCommonUtils.setUserInitialLetter(user23);
+                        EaseCommonUtils.setUserInitialLetter(user24);
+                        EaseCommonUtils.setUserInitialLetter(user25);
+                        EaseCommonUtils.setUserInitialLetter(user26);
+                        contactList.add(user1);
+                        contactList.add(user2);
+                        contactList.add(user3);
+                        contactList.add(user4);
+                        contactList.add(user5);
+                        contactList.add(user6);
+                        contactList.add(user7);
+                        contactList.add(user8);
+                        contactList.add(user9);
+                        contactList.add(user10);
+                        contactList.add(user11);
+                        contactList.add(user12);
+                        contactList.add(user13);
+                        contactList.add(user14);
+                        contactList.add(user15);
+                        contactList.add(user16);
+                        contactList.add(user17);
+                        contactList.add(user18);
+                        contactList.add(user19);
+                        contactList.add(user20);
+                        contactList.add(user21);
+                        contactList.add(user22);
+                        contactList.add(user23);
+                        contactList.add(user24);
+                        contactList.add(user25);
+                        contactList.add(user26);
                     }
                 }
             }

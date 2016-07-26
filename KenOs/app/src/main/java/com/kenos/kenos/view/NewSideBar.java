@@ -1,4 +1,4 @@
-package com.kenos.kenos.view.swipe;
+package com.kenos.kenos.view;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.widget.HeaderViewListAdapter;
 import android.widget.ListView;
 import android.widget.SectionIndexer;
 
@@ -22,6 +23,7 @@ import static android.support.v4.widget.ViewDragHelper.INVALID_POINTER;
 public class NewSideBar extends View {
 
     private static final String TAG = NewSideBar.class.getSimpleName();
+    private SectionIndexer sectionIndexter;
 
     public interface OnTouchingLetterChangedListener {
         void onTouchingLetterChanged(String s);
@@ -30,6 +32,9 @@ public class NewSideBar extends View {
     private OnTouchingLetterChangedListener mOnTouchingLetterChangedListener;
 
     private String[] mLetters = null;
+    private char[] l = new char[]{'#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+            'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+            'W', 'X', 'Y', 'Z'};
     private Paint mPaint;
     private int mTextColor;
     private int mResArrayId = R.array.letter_list;
@@ -44,6 +49,7 @@ public class NewSideBar extends View {
     private float mInitialDownY;
     private boolean mIsBeingDragged, mStartEndAnim;
     private int mActivePointerId = INVALID_POINTER;
+    private ListView mListView;
 
     private RectF mIsDownRect = new RectF();
 
@@ -53,6 +59,11 @@ public class NewSideBar extends View {
 
     public NewSideBar(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
+    }
+
+
+    public void setListView(ListView listView) {
+        mListView = listView;
     }
 
     public NewSideBar(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -79,6 +90,33 @@ public class NewSideBar extends View {
         return mLetters.length;
     }
 
+    /**
+     * 处理ListView的位置
+     *
+     * @param event
+     * @return
+     */
+    public boolean handleListView(MotionEvent event) {
+        super.onTouchEvent(event);
+        int i = (int) event.getY();
+        int idx = (int) (i / mLetterHeight);
+        if (idx >= l.length) {
+            idx = l.length - 1;
+        } else if (idx < 0) {
+            idx = 0;
+        }
+        if (sectionIndexter == null) {
+            HeaderViewListAdapter ha = (HeaderViewListAdapter) mListView.getAdapter();
+            sectionIndexter = (SectionIndexer) ha.getWrappedAdapter();
+        }
+        int position = sectionIndexter.getPositionForSection(l[idx]) - 1;
+        if (position == -1) {
+            return true;
+        }
+        mListView.setSelection(position);
+        return true;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
         final int action = MotionEventCompat.getActionMasked(ev);
@@ -96,31 +134,8 @@ public class NewSideBar extends View {
                 mInitialDownY = initialDownY;
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (mActivePointerId == INVALID_POINTER) {
-                    return false;
-                }
-
-                final float y = getMotionEventY(ev, mActivePointerId);
-                if (y == -1) {
-                    return false;
-                }
-                final float yDiff = Math.abs(y - mInitialDownY);
-                if (yDiff > mTouchSlop && !mIsBeingDragged) {
-                    mIsBeingDragged = true;
-                }
-                if (mIsBeingDragged) {
-                    mY = y;
-                    final float moveY = y - getPaddingTop() - mLetterHeight / 1.64f;
-                    final int characterIndex = (int) (moveY / mHalfHeight * mLetters.length);
-                    if (mChoose != characterIndex) {
-                        if (characterIndex >= 0 && characterIndex < mLetters.length) {
-                            mChoose = characterIndex;
-                            Log.d(TAG, "mChoose " + mChoose + " mLetterHeight " + mLetterHeight);
-//                            mOnTouchingLetterChangedListener.onTouchingLetterChanged(mLetters[characterIndex]);
-                        }
-                    }
-                    invalidate();
-                }
+                if (handleEvent(ev)) return false;
+                handleListView(ev);
                 break;
             case MotionEventCompat.ACTION_POINTER_UP:
                 onSecondaryPointerUp(ev);
@@ -141,7 +156,6 @@ public class NewSideBar extends View {
                 mStartEndAnim = mIsBeingDragged;
                 mIsBeingDragged = false;
                 mActivePointerId = INVALID_POINTER;
-
                 mChoose = -1;
                 mAnimStep = 0f;
                 invalidate();
@@ -149,6 +163,42 @@ public class NewSideBar extends View {
         }
         return true;
     }
+
+    /**
+     * 处理事件
+     *
+     * @param ev
+     * @return
+     */
+    private boolean handleEvent(MotionEvent ev) {
+        if (mActivePointerId == INVALID_POINTER) {
+            return true;
+        }
+
+        final float y = getMotionEventY(ev, mActivePointerId);
+        if (y == -1) {
+            return true;
+        }
+        final float yDiff = Math.abs(y - mInitialDownY);
+        if (yDiff > mTouchSlop && !mIsBeingDragged) {
+            mIsBeingDragged = true;
+        }
+        if (mIsBeingDragged) {
+            mY = y;
+            final float moveY = y - getPaddingTop() - mLetterHeight / 1.64f;
+            final int characterIndex = (int) (moveY / mHalfHeight * mLetters.length);
+            if (mChoose != characterIndex) {
+                if (characterIndex >= 0 && characterIndex < mLetters.length) {
+                    mChoose = characterIndex;
+                    Log.d(TAG, "mChoose " + mChoose + " mLetterHeight " + mLetterHeight);
+                    mOnTouchingLetterChangedListener.onTouchingLetterChanged(mLetters[characterIndex]);
+                }
+            }
+            invalidate();
+        }
+        return false;
+    }
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
