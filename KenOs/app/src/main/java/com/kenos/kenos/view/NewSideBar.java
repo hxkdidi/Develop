@@ -31,13 +31,11 @@ public class NewSideBar extends View {
 
     private OnTouchingLetterChangedListener mOnTouchingLetterChangedListener;
 
-    private String[] mLetters = null;
     private char[] l = new char[]{'#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
             'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
             'W', 'X', 'Y', 'Z'};
     private Paint mPaint;
     private int mTextColor;
-    private int mResArrayId = R.array.letter_list;
     private int mChoose = -1;
     private final float mDensity;
     private float mY;
@@ -73,12 +71,8 @@ public class NewSideBar extends View {
         this.mPaint.setAntiAlias(true);
         this.mPaint.setTextAlign(Paint.Align.CENTER);
         this.mPaint.setColor(this.mTextColor);
-
-        this.mLetters = context.getResources().getStringArray(mResArrayId);
-
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mDensity = getContext().getResources().getDisplayMetrics().density;
-
         setPadding(0, dip2px(20), 0, dip2px(20));
     }
 
@@ -87,7 +81,7 @@ public class NewSideBar extends View {
     }
 
     private int getLettersSize() {
-        return mLetters.length;
+        return l.length;
     }
 
     /**
@@ -144,12 +138,12 @@ public class NewSideBar extends View {
             case MotionEvent.ACTION_CANCEL:
                 if (mOnTouchingLetterChangedListener != null) {
                     if (mIsBeingDragged) {
-                        mOnTouchingLetterChangedListener.onTouchingLetterChanged(mLetters[mChoose]);
+                        mOnTouchingLetterChangedListener.onTouchingLetterChanged(String.valueOf(l[mChoose]));
                     } else {
                         float downY = ev.getY() - getPaddingTop();
-                        final int characterIndex = (int) (downY / mHalfHeight * mLetters.length);
-                        if (characterIndex >= 0 && characterIndex < mLetters.length) {
-                            mOnTouchingLetterChangedListener.onTouchingLetterChanged(mLetters[characterIndex]);
+                        final int characterIndex = (int) (downY / mHalfHeight * l.length);
+                        if (characterIndex >= 0 && characterIndex < l.length) {
+                            mOnTouchingLetterChangedListener.onTouchingLetterChanged(String.valueOf(l[characterIndex]));
                         }
                     }
                 }
@@ -186,12 +180,12 @@ public class NewSideBar extends View {
         if (mIsBeingDragged) {
             mY = y;
             final float moveY = y - getPaddingTop() - mLetterHeight / 1.64f;
-            final int characterIndex = (int) (moveY / mHalfHeight * mLetters.length);
+            final int characterIndex = (int) (moveY / mHalfHeight * l.length);
             if (mChoose != characterIndex) {
-                if (characterIndex >= 0 && characterIndex < mLetters.length) {
+                if (characterIndex >= 0 && characterIndex < l.length) {
                     mChoose = characterIndex;
                     Log.d(TAG, "mChoose " + mChoose + " mLetterHeight " + mLetterHeight);
-                    mOnTouchingLetterChangedListener.onTouchingLetterChanged(mLetters[characterIndex]);
+                    mOnTouchingLetterChangedListener.onTouchingLetterChanged(String.valueOf(l[characterIndex]));
                 }
             }
             invalidate();
@@ -250,7 +244,7 @@ public class NewSideBar extends View {
                 this.mPaint.setAlpha(alpha);
                 this.mPaint.setTypeface(Typeface.DEFAULT_BOLD);
             }
-            canvas.drawText(mLetters[i], mHalfWidth, letterPosY, this.mPaint);
+            canvas.drawText(String.valueOf(l[i]), mHalfWidth, letterPosY, this.mPaint);
             canvas.restore();
         }
         if (mChoose == -1 && mStartEndAnim && mAnimStep <= 0.6f) {
