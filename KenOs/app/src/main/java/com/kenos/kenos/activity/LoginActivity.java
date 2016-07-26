@@ -94,7 +94,6 @@ public class LoginActivity extends BaseActivity {
             Toast.makeText(this, R.string.Password_cannot_be_empty, Toast.LENGTH_SHORT).show();
             return;
         }
-
         progressShow = true;
         final ProgressDialog pd = new ProgressDialog(LoginActivity.this);
         pd.setCanceledOnTouchOutside(false);
@@ -114,7 +113,6 @@ public class LoginActivity extends BaseActivity {
         // 调用sdk登陆方法登陆聊天服务器
         Log.d(TAG, "EMClient.getInstance().login");
         EMClient.getInstance().login(currentUsername, currentPassword, new EMCallBack() {
-
             @Override
             public void onSuccess() {
                 Log.d(TAG, "login: onSuccess");
@@ -128,7 +126,6 @@ public class LoginActivity extends BaseActivity {
                 EMClient.getInstance().groupManager().loadAllGroups();
                 EMClient.getInstance().chatManager().loadAllConversations();
                 getFriends();
-
                 // 进入主页面
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(intent);

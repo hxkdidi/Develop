@@ -3,20 +3,24 @@ package com.kenos.kenos.activity;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
+import android.provider.MediaStore;
 import android.support.v4.view.ViewPager;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -36,16 +40,19 @@ import com.hyphenate.EMMessageListener;
 import com.hyphenate.chat.EMChatManager;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMConversation;
+import com.hyphenate.chat.EMImageMessageBody;
 import com.hyphenate.chat.EMLocationMessageBody;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMMessage.ChatType;
 import com.hyphenate.chat.EMVoiceMessageBody;
+import com.hyphenate.util.PathUtil;
 import com.hyphenate.util.VoiceRecorder;
 import com.kenos.kenos.Constant;
 import com.kenos.kenos.R;
 import com.kenos.kenos.adapter.ExpressionAdapter;
 import com.kenos.kenos.adapter.ExpressionPagerAdapter;
 import com.kenos.kenos.adapter.KenMessageAdapter;
+import com.kenos.kenos.app.KenApplication;
 import com.kenos.kenos.base.BaseActivity;
 import com.kenos.kenos.listener.VoicePlayClickListener;
 import com.kenos.kenos.preference.LocalUserInfo;
@@ -146,7 +153,10 @@ public class ChatActivity extends BaseActivity {
     public static final int RESULT_CODE_TO_CLOUD = 6;
     public static final int RESULT_CODE_EXIT_GROUP = 7;
     private ImageView btnLocation;
-
+    private ImageView btnPicture;
+    private ImageView btnTakePicture;
+    private ImageView btnVideo;
+    private File cameraFile;
 
     @Override
     protected void onCreate(Bundle arg0) {
@@ -194,6 +204,9 @@ public class ChatActivity extends BaseActivity {
         iv_emoticons_checked.setVisibility(View.GONE);
         more = (LinearLayout) findViewById(R.id.more);
         btnLocation = (ImageView) findViewById(R.id.btn_location);
+        btnPicture = (ImageView) findViewById(R.id.btn_picture);
+        btnTakePicture = (ImageView) findViewById(R.id.btn_take_picture);
+        btnVideo = (ImageView) findViewById(R.id.btn_video);
         //==========================================================================
         et_content.requestFocus();
         et_content.setBackgroundResource(R.drawable.edit_text_bg_normal);
@@ -238,6 +251,10 @@ public class ChatActivity extends BaseActivity {
         buttonPressToSpeak.setOnClickListener(this);
         more.setOnClickListener(this);
         btnMore.setOnClickListener(this);
+        btnLocation.setOnClickListener(this);
+        btnPicture.setOnClickListener(this);
+        btnTakePicture.setOnClickListener(this);
+        btnVideo.setOnClickListener(this);
         btnLocation.setOnClickListener(this);
         listView.setOnScrollListener(new ListScrollListener());
         listView.setOnTouchListener(new View.OnTouchListener() {
@@ -385,7 +402,62 @@ public class ChatActivity extends BaseActivity {
             case R.id.btn_location:
                 startActivityForResult(new Intent(this, BaiduMapActivity.class), REQUEST_CODE_MAP);
                 break;
+            case R.id.btn_picture:
+                selectPicFromLocal();
+                break;
+            case R.id.btn_take_picture:
+                selectPicFromCamera();
+                break;
+            case R.id.btn_video:
+                startActivityForResult(new Intent(this, BaiduMapActivity.class), REQUEST_CODE_SELECT_VIDEO);
+                break;
         }
+    }
+
+    /**
+     * 照相获取图片
+     */
+    public void selectPicFromCamera() {
+        if (!CommonUtils.isExitsSdcard()) {
+            Toast.makeText(getApplicationContext(), "SD卡不存在，不能拍照", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        cameraFile = new File(PathUtil.getInstance().getImagePath(), KenApplication.getInstance().getCurrentUserName() + System.currentTimeMillis() + ".jpg");
+        cameraFile.getParentFile().mkdirs();
+        startActivityForResult(
+                new Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(cameraFile)),
+                REQUEST_CODE_CAMERA);
+    }
+
+    /**
+     * 选择文件
+     */
+    private void selectFileFromLocal() {
+        Intent intent = null;
+        if (Build.VERSION.SDK_INT < 19) {
+            intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("*/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        } else {
+            intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        }
+        startActivityForResult(intent, REQUEST_CODE_SELECT_FILE);
+    }
+
+    /**
+     * 从图库获取图片
+     */
+    public void selectPicFromLocal() {
+        Intent intent;
+        if (Build.VERSION.SDK_INT < 19) {
+            intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+
+        } else {
+            intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        }
+        startActivityForResult(intent, REQUEST_CODE_LOCAL);
     }
 
     @Override
@@ -420,12 +492,19 @@ public class ChatActivity extends BaseActivity {
             if (requestCode == REQUEST_CODE_EMPTY_HISTORY) {
 
             } else if (requestCode == REQUEST_CODE_CAMERA) { // 发送照片
-
+                if (cameraFile != null && cameraFile.exists())
+                    Log.e("path------>>>>", cameraFile.getAbsolutePath());
+                sendPicture(cameraFile.getAbsolutePath(), false);
             } else if (requestCode == REQUEST_CODE_SELECT_VIDEO) { // 发送本地选择的视频
 
 
             } else if (requestCode == REQUEST_CODE_LOCAL) { // 发送本地图片
-
+                if (data != null) {
+                    Uri selectedImage = data.getData();
+                    if (selectedImage != null) {
+                        sendPicByUri(selectedImage);
+                    }
+                }
             } else if (requestCode == REQUEST_CODE_SELECT_FILE) { // 发送选择的文件
 
 
@@ -456,6 +535,43 @@ public class ChatActivity extends BaseActivity {
 
             }
         }
+    }
+
+    /**
+     * 根据图库图片uri发送图片
+     *
+     * @param selectedImage
+     */
+    private void sendPicByUri(Uri selectedImage) {
+        // String[] filePathColumn = { MediaStore.Images.Media.DATA };
+        Cursor cursor = getContentResolver().query(selectedImage, null, null,
+                null, null);
+        if (cursor != null) {
+            cursor.moveToFirst();
+            int columnIndex = cursor.getColumnIndex("_data");
+            String picturePath = cursor.getString(columnIndex);
+            cursor.close();
+            cursor = null;
+
+            if (picturePath == null || picturePath.equals("null")) {
+                Toast toast = Toast.makeText(this, "找不到图片", Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
+                return;
+            }
+            sendPicture(picturePath, false);
+        } else {
+            File file = new File(selectedImage.getPath());
+            if (!file.exists()) {
+                Toast toast = Toast.makeText(this, "找不到图片", Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
+                return;
+
+            }
+            sendPicture(file.getAbsolutePath(), false);
+        }
+
     }
 
     /**
@@ -614,6 +730,37 @@ public class ChatActivity extends BaseActivity {
         listView.setSelection(listView.getCount() - 1);
         setResult(RESULT_OK);
 
+    }
+
+    /**
+     * 发送图片
+     *
+     * @param filePath
+     */
+    private void sendPicture(final String filePath, boolean is_share) {
+        Log.e("filePath------>>>>", filePath);
+        String to = toChatUsername;
+        // create and add image message in view
+        final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.IMAGE);
+        // 如果是群聊，设置chattype,默认是单聊
+        if (chatType == CHAT_TYPE_GROUP) message.setChatType(ChatType.GroupChat);
+        message.setReceipt(to);
+        message.setAttribute("toUserNick", toChatUserNick);
+        message.setAttribute("toUserAvatar", toUserAvatar);
+        message.setAttribute("useravatar", myUserAvatar);
+        message.setAttribute("usernick", myUserNick);
+        if (is_share) {
+            message.setAttribute("isShare", "yes");
+        }
+        EMImageMessageBody body = new EMImageMessageBody(new File(filePath));
+        // 默认超过100k的图片会压缩后发给对方，可以设置成发送原图
+        body.setSendOriginalImage(true);
+        message.addBody(body);
+        msgList.add(message);
+        listView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        listView.setSelection(listView.getCount() - 1);
+        setResult(RESULT_OK);
     }
 
     /**
