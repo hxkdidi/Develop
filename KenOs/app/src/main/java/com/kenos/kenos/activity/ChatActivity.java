@@ -416,7 +416,7 @@ public class ChatActivity extends BaseActivity {
                 selectFileFromLocal();
                 break;
             case R.id.btn_video:
-                startActivityForResult(new Intent(this, BaiduMapActivity.class), REQUEST_CODE_SELECT_VIDEO);
+                startActivity(new Intent(this, TestActivity.class));
                 break;
         }
     }

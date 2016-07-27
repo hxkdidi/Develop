@@ -177,6 +177,13 @@
             android:screenOrientation="portrait"
             >
         </activity>
+        <!-- 测试 -->
+        <activity
+            android:name=".activity.TestActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="portrait"
+            >
+        </activity>
     </application>
 
 </manifest>

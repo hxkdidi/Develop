@@ -781,7 +781,7 @@ public class KenMessageAdapter extends BaseAdapter {
                             e.printStackTrace();
                         }
                     }
-                    ActivityManager.getInstance().showBigImage(activity,message);
+                    ActivityManager.getInstance().showBigImage(activity, message);
                 }
             });
             return true;
@@ -807,7 +807,7 @@ public class KenMessageAdapter extends BaseAdapter {
         if (holder.tv != null)
             holder.tv.setVisibility(View.VISIBLE);
         //set head map
-        final Map<String, String> maps = new HashMap<String, String>();
+        final Map<String, String> maps = new HashMap<>();
         if (!TextUtils.isEmpty(msgbody.getSecret())) {
             maps.put("share-secret", msgbody.getSecret());
         }
