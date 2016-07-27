@@ -21,23 +21,31 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.hyphenate.EMCallBack;
+import com.hyphenate.chat.EMChatManager;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMFileMessageBody;
 import com.hyphenate.chat.EMImageMessageBody;
 import com.hyphenate.chat.EMLocationMessageBody;
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.chat.EMNormalFileMessageBody;
 import com.hyphenate.chat.EMTextMessageBody;
+import com.hyphenate.chat.EMVideoMessageBody;
 import com.hyphenate.chat.EMVoiceMessageBody;
 import com.hyphenate.exceptions.HyphenateException;
 import com.hyphenate.util.DateUtils;
 import com.hyphenate.util.EMLog;
+import com.hyphenate.util.FileUtils;
 import com.hyphenate.util.LatLng;
+import com.hyphenate.util.TextFormater;
 import com.kenos.kenos.Constant;
 import com.kenos.kenos.R;
 import com.kenos.kenos.activity.BaiduMapActivity;
 import com.kenos.kenos.activity.ChatActivity;
+import com.kenos.kenos.activity.ShowNormalFileActivity;
+import com.kenos.kenos.activity.ShowVideoActivity;
 import com.kenos.kenos.listener.VoicePlayClickListener;
 import com.kenos.kenos.task.LoadImageTask;
+import com.kenos.kenos.task.LoadVideoImageTask;
 import com.kenos.kenos.utils.ImageCache;
 import com.kenos.kenos.utils.ImageUtils;
 import com.kenos.kenos.utils.SmileUtils;
@@ -237,8 +245,37 @@ public class KenMessageAdapter extends BaseAdapter {
                     } catch (Exception e) {
                     }
                 } else if (message.getType() == EMMessage.Type.VIDEO) {
-
+                    try {
+                        holder.iv = ((ImageView) convertView.findViewById(R.id.chatting_content_iv));
+                        holder.head_iv = (ImageView) convertView.findViewById(R.id.iv_userhead);
+                        holder.tv = (TextView) convertView.findViewById(R.id.percentage);
+                        holder.pb = (ProgressBar) convertView.findViewById(R.id.progressBar);
+                        holder.status_iv = (ImageView) convertView.findViewById(R.id.msg_status);
+                        holder.size = (TextView) convertView.findViewById(R.id.chatting_size_iv);
+                        holder.timeLength = (TextView) convertView.findViewById(R.id.chatting_length_iv);
+                        holder.playBtn = (ImageView) convertView.findViewById(R.id.chatting_status_btn);
+                        holder.container_status_btn = (LinearLayout) convertView.findViewById(R.id.container_status_btn);
+                        holder.tv_userId = (TextView) convertView.findViewById(R.id.tv_userid);
+                    } catch (Exception e) {
+                    }
                 } else if (message.getType() == EMMessage.Type.FILE) {
+                    try {
+                        holder.head_iv = (ImageView) convertView.findViewById(R.id.iv_userhead);
+                        holder.tv_file_name = (TextView) convertView.findViewById(R.id.tv_file_name);
+                        holder.tv_file_size = (TextView) convertView.findViewById(R.id.tv_file_size);
+                        holder.pb = (ProgressBar) convertView.findViewById(R.id.pb_sending);
+                        holder.status_iv = (ImageView) convertView.findViewById(R.id.msg_status);
+                        holder.tv_file_download_state = (TextView) convertView.findViewById(R.id.tv_file_state);
+                        holder.ll_container = (LinearLayout) convertView.findViewById(R.id.ll_file_container);
+                        // 这里是进度值
+                        holder.tv = (TextView) convertView.findViewById(R.id.percentage);
+                    } catch (Exception e) {
+                    }
+                    try {
+                        holder.tv_userId = (TextView) convertView
+                                .findViewById(R.id.tv_userid);
+                    } catch (Exception e) {
+                    }
 
                 } else if (message.getType() == EMMessage.Type.TXT) {
                     try {
@@ -326,8 +363,10 @@ public class KenMessageAdapter extends BaseAdapter {
                     handleVoiceMessage(message, holder);
                     break;
                 case VIDEO: // 视频
+                    handleVideoMessage(message, holder, position);
                     break;
                 case FILE: // 一般文件
+                    handleFileMessage(message, holder);
                     break;
                 default:
                     // not supported
@@ -395,6 +434,218 @@ public class KenMessageAdapter extends BaseAdapter {
             }
         }
         return convertView;
+    }
+
+    /**
+     * 视频消息
+     *
+     * @param message
+     * @param holder
+     */
+    private void handleVideoMessage(final EMMessage message,
+                                    final ViewHolder holder, int position) {
+        EMVideoMessageBody videoBody = (EMVideoMessageBody) message.getBody();
+        // final File image=new File(PathUtil.getInstance().getVideoPath(),
+        // videoBody.getFileName());
+        String localThumb = videoBody.getLocalThumb();
+        if (localThumb != null) {
+            showVideoThumbView(localThumb, holder.iv, videoBody.getThumbnailUrl(), message);
+        }
+        if (videoBody.getDuration() > 0) {
+            String time = DateUtils.toTimeBySecond(videoBody.getDuration());
+            holder.timeLength.setText(time);
+        }
+        holder.playBtn.setImageResource(R.mipmap.video_download_btn_nor);
+        if (message.direct() == EMMessage.Direct.RECEIVE) {
+            if (videoBody.getVideoFileLength() > 0) {
+                String size = TextFormater.getDataSize(videoBody.getVideoFileLength());
+                holder.size.setText(size);
+            }
+        } else {
+            if (videoBody.getLocalUrl() != null && new File(videoBody.getLocalUrl()).exists()) {
+                String size = TextFormater.getDataSize(new File(videoBody.getLocalUrl()).length());
+                holder.size.setText(size);
+            }
+        }
+        if (message.direct() == EMMessage.Direct.RECEIVE) {
+            // System.err.println("it is receive msg");
+            if (message.status() == EMMessage.Status.INPROGRESS) {
+                // System.err.println("!!!! back receive");
+                holder.iv.setImageResource(R.mipmap.ic_launcher);
+                showDownloadImageProgress(message, holder);
+
+            } else {
+                // System.err.println("!!!! not back receive, show image directly");
+                holder.iv.setImageResource(R.mipmap.ic_launcher);
+                if (localThumb != null) {
+                    showVideoThumbView(localThumb, holder.iv, videoBody.getThumbnailUrl(), message);
+                }
+            }
+            return;
+        }
+        holder.pb.setTag(position);
+
+        // until here ,deal with send video msg
+        switch (message.status()) {
+            case SUCCESS:
+                holder.pb.setVisibility(View.GONE);
+                holder.status_iv.setVisibility(View.GONE);
+                holder.tv.setVisibility(View.GONE);
+                break;
+            case FAIL:
+                holder.pb.setVisibility(View.GONE);
+                holder.tv.setVisibility(View.GONE);
+                holder.status_iv.setVisibility(View.VISIBLE);
+                break;
+            case INPROGRESS:
+                if (timers.containsKey(message.getMsgId()))
+                    return;
+                // set a timer
+                final Timer timer = new Timer();
+                timers.put(message.getMsgId(), timer);
+                timer.schedule(new TimerTask() {
+
+                    @Override
+                    public void run() {
+                        activity.runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                holder.pb.setVisibility(View.VISIBLE);
+                                holder.tv.setVisibility(View.VISIBLE);
+                                holder.tv.setText(message.progress() + "%");
+                                if (message.status() == EMMessage.Status.SUCCESS) {
+                                    holder.pb.setVisibility(View.GONE);
+                                    holder.tv.setVisibility(View.GONE);
+                                    // message.setSendingStatus(Message.SENDING_STATUS_SUCCESS);
+                                    timer.cancel();
+                                } else if (message.status() == EMMessage.Status.FAIL) {
+                                    holder.pb.setVisibility(View.GONE);
+                                    holder.tv.setVisibility(View.GONE);
+                                    // message.setSendingStatus(Message.SENDING_STATUS_FAIL);
+                                    // message.setProgress(0);
+                                    holder.status_iv.setVisibility(View.VISIBLE);
+                                    Toast.makeText(
+                                            activity,
+                                            activity.getString(R.string.send_fail)
+                                                    + activity
+                                                    .getString(R.string.connect_failuer_toast),
+                                            Toast.LENGTH_LONG).show();
+                                    timer.cancel();
+                                }
+
+                            }
+                        });
+
+                    }
+                }, 0, 500);
+                break;
+            default:
+                sendPictureMessage(message, holder);
+
+        }
+
+    }
+
+    /**
+     * 文件消息
+     *
+     * @param message
+     * @param holder
+     */
+    private void handleFileMessage(final EMMessage message,
+                                   final ViewHolder holder) {
+        final EMNormalFileMessageBody fileMessageBody = (EMNormalFileMessageBody) message.getBody();
+        final String filePath = fileMessageBody.getLocalUrl();
+        holder.tv_file_name.setText(fileMessageBody.getFileName());
+        holder.tv_file_size.setText(TextFormater.getDataSize(fileMessageBody.getFileSize()));
+        holder.ll_container.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                File file = new File(filePath);
+                if (file != null && file.exists()) {
+                    // 文件存在，直接打开
+                    FileUtils.openFile(file, (Activity) context);
+                } else {
+                    // 下载
+                    context.startActivity(new Intent(context, ShowNormalFileActivity.class).putExtra("msgbody", fileMessageBody));
+                }
+                if (message.direct() == EMMessage.Direct.RECEIVE
+                        && !message.isAcked()) {
+                    try {
+                        EMClient.getInstance().chatManager().ackMessageRead(message.getFrom(), message.getMsgId());
+                        message.setAcked(true);
+                    } catch (HyphenateException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        if (message.direct() == EMMessage.Direct.RECEIVE) { // 接收的消息
+            System.err.println("it is receive msg");
+            File file = new File(filePath);
+            if (file != null && file.exists()) {
+                holder.tv_file_download_state.setText("已下载");
+            } else {
+                holder.tv_file_download_state.setText("未下载");
+            }
+            return;
+        }
+
+        // until here, deal with send voice msg
+        switch (message.status()) {
+            case SUCCESS:
+                holder.pb.setVisibility(View.INVISIBLE);
+                holder.tv.setVisibility(View.INVISIBLE);
+                holder.status_iv.setVisibility(View.INVISIBLE);
+                break;
+            case FAIL:
+                holder.pb.setVisibility(View.INVISIBLE);
+                holder.tv.setVisibility(View.INVISIBLE);
+                holder.status_iv.setVisibility(View.VISIBLE);
+                break;
+            case INPROGRESS:
+                if (timers.containsKey(message.getMsgId()))
+                    return;
+                // set a timer
+                final Timer timer = new Timer();
+                timers.put(message.getMsgId(), timer);
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                holder.pb.setVisibility(View.VISIBLE);
+                                holder.tv.setVisibility(View.VISIBLE);
+                                holder.tv.setText(message.progress() + "%");
+                                if (message.status() == EMMessage.Status.SUCCESS) {
+                                    holder.pb.setVisibility(View.INVISIBLE);
+                                    holder.tv.setVisibility(View.INVISIBLE);
+                                    timer.cancel();
+                                } else if (message.status() == EMMessage.Status.FAIL) {
+                                    holder.pb.setVisibility(View.INVISIBLE);
+                                    holder.tv.setVisibility(View.INVISIBLE);
+                                    holder.status_iv.setVisibility(View.VISIBLE);
+                                    Toast.makeText(
+                                            activity,
+                                            activity.getString(R.string.send_fail) + activity.getString(R.string.connect_failuer_toast),
+                                            Toast.LENGTH_LONG).show();
+                                    timer.cancel();
+                                }
+
+                            }
+                        });
+
+                    }
+                }, 0, 500);
+                break;
+            default:
+                // 发送消息
+                sendMsgInBackground(message, holder);
+        }
+
     }
 
     /**
@@ -507,11 +758,6 @@ public class KenMessageAdapter extends BaseAdapter {
     private boolean showImageView(final String thumbernailPath,
                                   final ImageView iv, final String localFullSizePath,
                                   String remoteDir, final EMMessage message) {
-        // String imagename =
-        // localFullSizePath.substring(localFullSizePath.lastIndexOf("/") + 1,
-        // localFullSizePath.length());
-        // final String remote = remoteDir != null ? remoteDir+imagename :
-        // imagename;
         final String remote = remoteDir;
         EMLog.d("###", "local = " + localFullSizePath + " remote: " + remote);
         // first check if the thumbnail image already loaded into cache
@@ -615,7 +861,6 @@ public class KenMessageAdapter extends BaseAdapter {
                         }
                     });
                 }
-
             }
         });
     }
@@ -888,6 +1133,51 @@ public class KenMessageAdapter extends BaseAdapter {
                 notifyDataSetChanged();
             }
         });
+    }
+
+    /**
+     * 展示视频缩略图
+     *
+     * @param localThumb   本地缩略图路径
+     * @param iv
+     * @param thumbnailUrl 远程缩略图路径
+     * @param message
+     */
+    private void showVideoThumbView(String localThumb, ImageView iv,
+                                    String thumbnailUrl, final EMMessage message) {
+        // first check if the thumbnail image already loaded into cache
+        Bitmap bitmap = ImageCache.getInstance().get(localThumb);
+        if (bitmap != null) {
+            // thumbnail image is already loaded, reuse the drawable
+            iv.setImageBitmap(bitmap);
+            iv.setClickable(true);
+            iv.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    EMVideoMessageBody videoBody = (EMVideoMessageBody) message.getBody();
+                    System.err.println("video view is on click");
+                    Intent intent = new Intent(activity, ShowVideoActivity.class);
+                    intent.putExtra("localpath", videoBody.getLocalUrl());
+                    intent.putExtra("secret", videoBody.getSecret());
+                    intent.putExtra("remotepath", videoBody.getRemoteUrl());
+                    if (message != null
+                            && message.direct() == EMMessage.Direct.RECEIVE
+                            && !message.isAcked()
+                            && message.getChatType() != EMMessage.ChatType.GroupChat) {
+                        message.setAcked(true);
+                        try {
+                            EMClient.getInstance().chatManager().ackMessageRead(message.getFrom(), message.getMsgId());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    activity.startActivity(intent);
+                }
+            });
+
+        } else {
+            new LoadVideoImageTask().execute(localThumb, thumbnailUrl, iv, activity, message, this);
+        }
     }
 
     public static class ViewHolder {

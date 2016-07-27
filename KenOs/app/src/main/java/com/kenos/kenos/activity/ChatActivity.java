@@ -44,6 +44,7 @@ import com.hyphenate.chat.EMImageMessageBody;
 import com.hyphenate.chat.EMLocationMessageBody;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMMessage.ChatType;
+import com.hyphenate.chat.EMNormalFileMessageBody;
 import com.hyphenate.chat.EMVoiceMessageBody;
 import com.hyphenate.util.PathUtil;
 import com.hyphenate.util.VoiceRecorder;
@@ -157,6 +158,7 @@ public class ChatActivity extends BaseActivity {
     private ImageView btnTakePicture;
     private ImageView btnVideo;
     private File cameraFile;
+    private ImageView btnFile;
 
     @Override
     protected void onCreate(Bundle arg0) {
@@ -207,6 +209,7 @@ public class ChatActivity extends BaseActivity {
         btnPicture = (ImageView) findViewById(R.id.btn_picture);
         btnTakePicture = (ImageView) findViewById(R.id.btn_take_picture);
         btnVideo = (ImageView) findViewById(R.id.btn_video);
+        btnFile = (ImageView) findViewById(R.id.btn_file);
         //==========================================================================
         et_content.requestFocus();
         et_content.setBackgroundResource(R.drawable.edit_text_bg_normal);
@@ -256,6 +259,7 @@ public class ChatActivity extends BaseActivity {
         btnTakePicture.setOnClickListener(this);
         btnVideo.setOnClickListener(this);
         btnLocation.setOnClickListener(this);
+        btnFile.setOnClickListener(this);
         listView.setOnScrollListener(new ListScrollListener());
         listView.setOnTouchListener(new View.OnTouchListener() {
             @SuppressLint("ClickableViewAccessibility")
@@ -408,6 +412,9 @@ public class ChatActivity extends BaseActivity {
             case R.id.btn_take_picture:
                 selectPicFromCamera();
                 break;
+            case R.id.btn_file:
+                selectFileFromLocal();
+                break;
             case R.id.btn_video:
                 startActivityForResult(new Intent(this, BaiduMapActivity.class), REQUEST_CODE_SELECT_VIDEO);
                 break;
@@ -424,16 +431,14 @@ public class ChatActivity extends BaseActivity {
         }
         cameraFile = new File(PathUtil.getInstance().getImagePath(), KenApplication.getInstance().getCurrentUserName() + System.currentTimeMillis() + ".jpg");
         cameraFile.getParentFile().mkdirs();
-        startActivityForResult(
-                new Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(cameraFile)),
-                REQUEST_CODE_CAMERA);
+        startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(cameraFile)), REQUEST_CODE_CAMERA);
     }
 
     /**
      * 选择文件
      */
     private void selectFileFromLocal() {
-        Intent intent = null;
+        Intent intent;
         if (Build.VERSION.SDK_INT < 19) {
             intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("*/*");
@@ -506,7 +511,12 @@ public class ChatActivity extends BaseActivity {
                     }
                 }
             } else if (requestCode == REQUEST_CODE_SELECT_FILE) { // 发送选择的文件
-
+                if (data != null) {
+                    Uri uri = data.getData();
+                    if (uri != null) {
+                        sendFile(uri);
+                    }
+                }
 
             } else if (requestCode == REQUEST_CODE_MAP) { // 地图
                 double latitude = data.getDoubleExtra("latitude", 0);
@@ -524,7 +534,7 @@ public class ChatActivity extends BaseActivity {
                     || requestCode == REQUEST_CODE_LOCATION
                     || requestCode == REQUEST_CODE_VIDEO
                     || requestCode == REQUEST_CODE_FILE) {
-
+                resendMessage();
             } else if (requestCode == REQUEST_CODE_COPY_AND_PASTE) {//粘贴
 
             } else if (requestCode == REQUEST_CODE_ADD_TO_BLACKLIST) { // 移入黑名单
@@ -535,6 +545,70 @@ public class ChatActivity extends BaseActivity {
 
             }
         }
+    }
+
+    /**
+     * 重发消息
+     */
+    private void resendMessage() {
+        EMMessage msg = msgList.get(resendPos);
+        // msg.setBackSend(true);
+        msg.setStatus(EMMessage.Status.CREATE);
+        adapter.notifyDataSetChanged();
+        listView.setSelection(resendPos);
+    }
+
+    /**
+     * 发送文件
+     *
+     * @param uri
+     */
+    private void sendFile(Uri uri) {
+        String filePath = null;
+        if ("content".equalsIgnoreCase(uri.getScheme())) {
+            String[] projection = {"_data"};
+            Cursor cursor = null;
+            try {
+                cursor = getContentResolver().query(uri, projection, null, null, null);
+                int column_index = cursor.getColumnIndexOrThrow("_data");
+                if (cursor.moveToFirst()) {
+                    filePath = cursor.getString(column_index);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            filePath = uri.getPath();
+        }
+        File file = new File(filePath);
+        if (file == null || !file.exists()) {
+            Toast.makeText(getApplicationContext(), "文件不存在", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (file.length() > 10 * 1024 * 1024) {
+            Toast.makeText(getApplicationContext(), "文件不能大于10M", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 创建一个文件消息
+        EMMessage message = EMMessage.createSendMessage(EMMessage.Type.FILE);
+        // 如果是群聊，设置chattype,默认是单聊
+        if (chatType == CHAT_TYPE_GROUP)
+            message.setChatType(ChatType.GroupChat);
+
+        message.setReceipt(toChatUsername);
+        // add message body
+        EMNormalFileMessageBody body = new EMNormalFileMessageBody(new File(filePath));
+        message.addBody(body);
+        message.setAttribute("toUserNick", toChatUserNick);
+        message.setAttribute("toUserAvatar", toUserAvatar);
+        message.setAttribute("useravatar", myUserAvatar);
+        message.setAttribute("usernick", myUserNick);
+        msgList.add(message);
+        listView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        listView.setSelection(listView.getCount() - 1);
+        setResult(RESULT_OK);
     }
 
     /**
@@ -593,8 +667,7 @@ public class ChatActivity extends BaseActivity {
         public void onScrollStateChanged(AbsListView view, int scrollState) {
             switch (scrollState) {
                 case AbsListView.OnScrollListener.SCROLL_STATE_IDLE:
-                    if (view.getFirstVisiblePosition() == 0 && !isloading
-                            && haveMoreData) {
+                    if (view.getFirstVisiblePosition() == 0 && !isloading && haveMoreData) {
                         loadMorePB.setVisibility(View.VISIBLE);
                         // sdk初始化加载的聊天记录为20条，到顶时去db里获取更多
                         List<EMMessage> messages;

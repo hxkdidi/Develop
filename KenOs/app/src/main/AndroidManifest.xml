@@ -163,6 +163,13 @@
             android:screenOrientation="portrait"
             >
         </activity>
+        <!-- 视频 -->
+        <activity
+            android:name=".activity.ShowVideoActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="portrait"
+            >
+        </activity>
     </application>
 
 </manifest>
