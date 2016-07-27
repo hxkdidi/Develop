@@ -3,7 +3,7 @@
                 xmlns:android="http://schemas.android.com/apk/res/android"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#ebebeb">
+                >
 
     <RelativeLayout
         android:id="@+id/top_bar"
@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/height_top_bar"
         android:layout_alignParentTop="true"
-        android:background="@color/common_top_bar_blue"
+        android:background="@color/bar_color"
         >
 
         <ImageView

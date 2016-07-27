@@ -1,6 +1,6 @@
 /**
  * Copyright (C) 2013-2014 EaseMob Technologies. All rights reserved.
- * <p/>
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import com.hyphenate.chat.EMChatManager;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.util.ImageUtils;
+import com.kenos.kenos.app.ActivityManager;
 import com.kenos.kenos.utils.CommonUtils;
 import com.kenos.kenos.utils.ImageCache;
 
@@ -75,17 +76,6 @@ public class LoadImageTask extends AsyncTask<Object, Void, Bitmap> {
                 @Override
                 public void onClick(View v) {
                     if (thumbnailPath != null) {
-                        ArrayList<String> urls = new ArrayList<>();
-                        File file = new File(localFullSizePath);
-                        if (file.exists()) {
-                            Uri uri = Uri.fromFile(file);
-                            urls.add(uri.getPath());
-                        } else {
-                            // The local full size pic does not exist yet.
-                            // ShowBigImage needs to download it from the server
-                            // first
-                            urls.add(remotePath);
-                        }
                         if (message.getChatType() != EMMessage.ChatType.Chat) {
                             // delete the image from server after download
                         }
@@ -98,7 +88,7 @@ public class LoadImageTask extends AsyncTask<Object, Void, Bitmap> {
                                 e.printStackTrace();
                             }
                         }
-//                        ImagePagerActivity.startImagePagerActivity(activity, new ArrayList<String>(), 0);
+                        ActivityManager.getInstance().showBigImage(activity, message);
                     }
                 }
             });

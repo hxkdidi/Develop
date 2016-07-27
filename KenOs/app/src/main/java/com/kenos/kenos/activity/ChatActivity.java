@@ -827,7 +827,7 @@ public class ChatActivity extends BaseActivity {
         }
         EMImageMessageBody body = new EMImageMessageBody(new File(filePath));
         // 默认超过100k的图片会压缩后发给对方，可以设置成发送原图
-        body.setSendOriginalImage(true);
+//        body.setSendOriginalImage(true);
         message.addBody(body);
         msgList.add(message);
         listView.setAdapter(adapter);

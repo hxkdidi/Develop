@@ -43,6 +43,7 @@ import com.kenos.kenos.activity.BaiduMapActivity;
 import com.kenos.kenos.activity.ChatActivity;
 import com.kenos.kenos.activity.ShowNormalFileActivity;
 import com.kenos.kenos.activity.ShowVideoActivity;
+import com.kenos.kenos.app.ActivityManager;
 import com.kenos.kenos.listener.VoicePlayClickListener;
 import com.kenos.kenos.task.LoadImageTask;
 import com.kenos.kenos.task.LoadVideoImageTask;
@@ -769,24 +770,6 @@ public class KenMessageAdapter extends BaseAdapter {
             iv.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    System.err.println("image view on click");
-                    ArrayList<String> urls = new ArrayList<>();
-                    File file = new File(localFullSizePath);
-                    if (file.exists()) {
-                        Uri uri = Uri.fromFile(file);
-                        urls.add(uri.getPath());
-                        System.err.println("here need to check why download everytime");
-
-                    } else {
-                        // The local full size pic does not exist yet.
-                        // ShowBigImage needs to download it from the server
-                        // first
-                        // intent.putExtra("", message.get);
-                        EMImageMessageBody body = (EMImageMessageBody) message.getBody();
-                        String secret = body.getSecret();
-                        urls.add(remote);
-//                        ImagePagerActivity.startImagePagerActivity(activity, urls, 0, secret);
-                    }
                     if (message != null
                             && message.direct() == EMMessage.Direct.RECEIVE
                             && !message.isAcked()
@@ -794,12 +777,11 @@ public class KenMessageAdapter extends BaseAdapter {
                         try {
                             EMClient.getInstance().chatManager().ackMessageRead(message.getFrom(), message.getMsgId());
                             message.setAcked(true);
-                            ;
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
-//                    ImagePagerActivity.startImagePagerActivity(activity, urls, 0);
+                    ActivityManager.getInstance().showBigImage(activity,message);
                 }
             });
             return true;

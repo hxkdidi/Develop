@@ -90,7 +90,7 @@
         <service
             android:name="com.baidu.location.f"
             android:enabled="true"
-            android:process=":remote" >
+            android:process=":remote">
         </service>
 
         <!-- meta-data需要写在application中 -->
@@ -166,6 +166,13 @@
         <!-- 视频 -->
         <activity
             android:name=".activity.ShowVideoActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="portrait"
+            >
+        </activity>
+        <!-- 查看大图 -->
+        <activity
+            android:name=".activity.ShowBigImageActivity"
             android:configChanges="orientation|screenSize"
             android:screenOrientation="portrait"
             >
