@@ -30,7 +30,6 @@ public class KenApplication extends MultiDexApplication {
 
     @Override
     public void onCreate() {
-        MultiDex.install(this);
         super.onCreate();
         mContext = this;
         instance = this;
@@ -69,7 +68,7 @@ public class KenApplication extends MultiDexApplication {
 
     public void setContactList(Map<String, EaseUser> contactList) {
         this.contactList = contactList;
-        userDao.saveContactList(new ArrayList<EaseUser>(contactList.values()));
+        userDao.saveContactList(new ArrayList<>(contactList.values()));
 
     }
 
